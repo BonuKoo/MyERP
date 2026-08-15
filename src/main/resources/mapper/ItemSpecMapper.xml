@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.ItemSpecMapper">
+
+    <resultMap id="itemSpecResultMap" type="com.jinbo.myerp.domain.ItemSpec">
+        <id property="id" column="id"/>
+        <result property="itemId" column="item_id"/>
+        <result property="specName" column="spec_name"/>
+        <result property="unit" column="unit"/>
+        <result property="costPrice" column="cost_price"/>
+        <result property="salePrice" column="sale_price"/>
+        <result property="currentStock" column="current_stock"/>
+        <result property="safetyStock" column="safety_stock"/>
+        <result property="active" column="is_active"/>
+        <result property="version" column="version"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.ItemSpec" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO item_spec (item_id, spec_name, unit, cost_price, sale_price, current_stock, safety_stock,
+                                is_active, version, created_at, updated_at)
+        VALUES (#{itemId}, #{specName}, #{unit}, #{costPrice}, #{salePrice}, #{currentStock}, #{safetyStock},
+                #{active}, #{version}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="itemSpecResultMap">
+        SELECT id, item_id, spec_name, unit, cost_price, sale_price, current_stock, safety_stock,
+               is_active, version, created_at, updated_at
+        FROM item_spec
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByItemId" resultMap="itemSpecResultMap">
+        SELECT id, item_id, spec_name, unit, cost_price, sale_price, current_stock, safety_stock,
+               is_active, version, created_at, updated_at
+        FROM item_spec
+        WHERE item_id = #{itemId}
+        ORDER BY id
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.ItemSpec">
+        UPDATE item_spec
+        SET spec_name = #{specName},
+            unit = #{unit},
+            cost_price = #{costPrice},
+            sale_price = #{salePrice},
+            current_stock = #{currentStock},
+            safety_stock = #{safetyStock},
+            is_active = #{active},
+            version = #{version},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

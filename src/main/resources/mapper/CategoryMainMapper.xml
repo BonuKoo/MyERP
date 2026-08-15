@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.CategoryMainMapper">
+
+    <resultMap id="categoryMainResultMap" type="com.jinbo.myerp.domain.CategoryMain">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="displayOrder" column="display_order"/>
+        <result property="active" column="is_active"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.CategoryMain" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO category_main (name, display_order, is_active)
+        VALUES (#{name}, #{displayOrder}, #{active})
+    </insert>
+
+    <select id="findById" resultMap="categoryMainResultMap">
+        SELECT id, name, display_order, is_active
+        FROM category_main
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="categoryMainResultMap">
+        SELECT id, name, display_order, is_active
+        FROM category_main
+        ORDER BY display_order
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.CategoryMain">
+        UPDATE category_main
+        SET name = #{name},
+            display_order = #{displayOrder},
+            is_active = #{active}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

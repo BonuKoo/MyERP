@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.ItemMapper">
+
+    <resultMap id="itemResultMap" type="com.jinbo.myerp.domain.Item">
+        <id property="id" column="id"/>
+        <result property="categorySubId" column="category_sub_id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="ksStandard" column="ks_standard"/>
+        <result property="active" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Item" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO item (category_sub_id, name, description, ks_standard, is_active, created_at, updated_at)
+        VALUES (#{categorySubId}, #{name}, #{description}, #{ksStandard}, #{active}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="itemResultMap">
+        SELECT id, category_sub_id, name, description, ks_standard, is_active, created_at, updated_at
+        FROM item
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="itemResultMap">
+        SELECT id, category_sub_id, name, description, ks_standard, is_active, created_at, updated_at
+        FROM item
+        ORDER BY id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findByCategorySubId" resultMap="itemResultMap">
+        SELECT id, category_sub_id, name, description, ks_standard, is_active, created_at, updated_at
+        FROM item
+        WHERE category_sub_id = #{categorySubId}
+        ORDER BY id
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM item
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Item">
+        UPDATE item
+        SET category_sub_id = #{categorySubId},
+            name = #{name},
+            description = #{description},
+            ks_standard = #{ksStandard},
+            is_active = #{active},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
