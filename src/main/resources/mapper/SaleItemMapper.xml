@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.SaleItemMapper">
+
+    <resultMap id="saleItemResultMap" type="com.jinbo.myerp.domain.SaleItem">
+        <id property="id" column="id"/>
+        <result property="saleId" column="sale_id"/>
+        <result property="itemSpecId" column="item_spec_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="unitPrice" column="unit_price"/>
+        <result property="amount" column="amount"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.SaleItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sale_item (sale_id, item_spec_id, quantity, unit_price, amount)
+        VALUES (#{saleId}, #{itemSpecId}, #{quantity}, #{unitPrice}, #{amount})
+    </insert>
+
+    <select id="findBySaleId" resultMap="saleItemResultMap">
+        SELECT id, sale_id, item_spec_id, quantity, unit_price, amount
+        FROM sale_item
+        WHERE sale_id = #{saleId}
+        ORDER BY id
+    </select>
+
+</mapper>
