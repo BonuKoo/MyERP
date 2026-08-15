@@ -36,7 +36,8 @@ public class GlobalExceptionHandler {
             CategoryMainNotFoundException.class,
             CategorySubNotFoundException.class,
             ItemNotFoundException.class,
-            ItemSpecNotFoundException.class
+            ItemSpecNotFoundException.class,
+            CompanyInfoNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
