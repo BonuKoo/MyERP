@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.CategorySubMapper">
+
+    <resultMap id="categorySubResultMap" type="com.jinbo.myerp.domain.CategorySub">
+        <id property="id" column="id"/>
+        <result property="categoryMainId" column="category_main_id"/>
+        <result property="name" column="name"/>
+        <result property="displayOrder" column="display_order"/>
+        <result property="active" column="is_active"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.CategorySub" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO category_sub (category_main_id, name, display_order, is_active)
+        VALUES (#{categoryMainId}, #{name}, #{displayOrder}, #{active})
+    </insert>
+
+    <select id="findById" resultMap="categorySubResultMap">
+        SELECT id, category_main_id, name, display_order, is_active
+        FROM category_sub
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCategoryMainId" resultMap="categorySubResultMap">
+        SELECT id, category_main_id, name, display_order, is_active
+        FROM category_sub
+        WHERE category_main_id = #{categoryMainId}
+        ORDER BY display_order
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.CategorySub">
+        UPDATE category_sub
+        SET name = #{name},
+            display_order = #{displayOrder},
+            is_active = #{active}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

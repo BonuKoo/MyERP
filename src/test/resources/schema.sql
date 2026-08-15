@@ -31,3 +31,69 @@ CREATE TABLE company_info (
     phone               VARCHAR(20),
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE category_main (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(50) NOT NULL UNIQUE,
+    display_order   INT NOT NULL DEFAULT 0,
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE category_sub (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    category_main_id    BIGINT NOT NULL,
+    name                VARCHAR(50) NOT NULL,
+    display_order       INT NOT NULL DEFAULT 0,
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    UNIQUE (category_main_id, name)
+);
+
+CREATE TABLE item (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    category_sub_id     BIGINT NOT NULL,
+    name                VARCHAR(150) NOT NULL,
+    description         TEXT,
+    ks_standard         VARCHAR(50),
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE item_spec (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    item_id         BIGINT NOT NULL,
+    spec_name       VARCHAR(50) NOT NULL,
+    unit            VARCHAR(20) NOT NULL,
+    cost_price      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    sale_price      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    current_stock   INT NOT NULL DEFAULT 0,
+    safety_stock    INT NOT NULL DEFAULT 0,
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    version         INT NOT NULL DEFAULT 0,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE certification (
+    id      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name    VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE item_certification (
+    item_id             BIGINT NOT NULL,
+    certification_id    BIGINT NOT NULL,
+    PRIMARY KEY (item_id, certification_id)
+);
+
+CREATE TABLE stock_history (
+    id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    item_spec_id            BIGINT NOT NULL,
+    change_type             VARCHAR(20) NOT NULL,
+    quantity                INT NOT NULL,
+    before_stock            INT NOT NULL,
+    after_stock             INT NOT NULL,
+    related_document_type   VARCHAR(20),
+    related_document_id     BIGINT,
+    created_by              BIGINT NOT NULL,
+    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
