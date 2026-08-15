@@ -43,7 +43,7 @@ class AuthControllerTest {
         given(authService.register(anyString(), anyString(), anyString(), any(UserRole.class))).willReturn(saved);
 
         String body = """
-                {"email":"owner@myerp.com","password":"password123","name":"Kim Jinbo","role":"OWNER"}
+                {"email":"owner@myerp.com","password":"Password123!","name":"Kim Jinbo","role":"OWNER"}
                 """;
 
         mockMvc.perform(post("/api/auth/register")
@@ -58,7 +58,7 @@ class AuthControllerTest {
     @Test
     void register_invalidEmail_returns400() throws Exception {
         String body = """
-                {"email":"not-an-email","password":"password123","name":"Kim Jinbo","role":"OWNER"}
+                {"email":"not-an-email","password":"Password123!","name":"Kim Jinbo","role":"OWNER"}
                 """;
 
         mockMvc.perform(post("/api/auth/register")
@@ -80,12 +80,60 @@ class AuthControllerTest {
     }
 
     @Test
+    void register_passwordMissingUppercase_returns400() throws Exception {
+        String body = """
+                {"email":"owner@myerp.com","password":"password123!","name":"Kim Jinbo","role":"OWNER"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_passwordMissingLowercase_returns400() throws Exception {
+        String body = """
+                {"email":"owner@myerp.com","password":"PASSWORD123!","name":"Kim Jinbo","role":"OWNER"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_passwordMissingDigit_returns400() throws Exception {
+        String body = """
+                {"email":"owner@myerp.com","password":"Password!!!","name":"Kim Jinbo","role":"OWNER"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_passwordMissingSpecialChar_returns400() throws Exception {
+        String body = """
+                {"email":"owner@myerp.com","password":"Password123","name":"Kim Jinbo","role":"OWNER"}
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void register_duplicateEmail_returns409() throws Exception {
         given(authService.register(anyString(), anyString(), anyString(), any(UserRole.class)))
                 .willThrow(new EmailAlreadyExistsException("owner@myerp.com"));
 
         String body = """
-                {"email":"owner@myerp.com","password":"password123","name":"Kim Jinbo","role":"OWNER"}
+                {"email":"owner@myerp.com","password":"Password123!","name":"Kim Jinbo","role":"OWNER"}
                 """;
 
         mockMvc.perform(post("/api/auth/register")
