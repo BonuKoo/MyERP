@@ -21,6 +21,8 @@ export default function Layout() {
             <Link to="/partners">거래처</Link>
             <Link to="/categories">카테고리</Link>
             <Link to="/items">품목</Link>
+            <Link to="/purchases">매입</Link>
+            <Link to="/company-info">회사정보</Link>
             <span className="user-info">
               {user?.name} ({user?.role})
             </span>

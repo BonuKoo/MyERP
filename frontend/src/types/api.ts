@@ -1,6 +1,7 @@
 export type UserRole = 'OWNER' | 'STAFF';
 export type PartnerType = 'SUPPLIER' | 'CUSTOMER' | 'BOTH';
 export type StockChangeType = 'PURCHASE_IN' | 'SALE_OUT' | 'ADJUST';
+export type PurchaseStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELED';
 
 export interface RegisterRequest {
   email: string;
@@ -147,6 +148,61 @@ export interface StockHistoryResponse {
   relatedDocumentId: number | null;
   createdBy: number;
   createdAt: string;
+}
+
+export interface CompanyInfoRequest {
+  companyName: string;
+  businessNumber?: string;
+  ceoName?: string;
+  address?: string;
+  phone?: string;
+}
+
+export interface CompanyInfoResponse {
+  id: number;
+  companyName: string;
+  businessNumber: string | null;
+  ceoName: string | null;
+  address: string | null;
+  phone: string | null;
+  createdAt: string;
+}
+
+export interface PurchaseItemRequest {
+  itemSpecId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface PurchaseItemResponse {
+  id: number;
+  itemSpecId: number;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface PurchaseRequest {
+  partnerId: number;
+  companyInfoId: number;
+  purchaseDate: string;
+  memo?: string;
+  items: PurchaseItemRequest[];
+}
+
+export interface PurchaseResponse {
+  id: number;
+  purchaseNo: string;
+  partnerId: number;
+  companyInfoId: number;
+  purchaseDate: string;
+  totalAmount: number;
+  status: PurchaseStatus;
+  memo: string | null;
+  createdBy: number;
+  createdAt: string;
+  canceledAt: string | null;
+  items: PurchaseItemResponse[];
 }
 
 export interface PageResponse<T> {
