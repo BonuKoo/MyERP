@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.StockHistoryMapper">
+
+    <resultMap id="stockHistoryResultMap" type="com.jinbo.myerp.domain.StockHistory">
+        <id property="id" column="id"/>
+        <result property="itemSpecId" column="item_spec_id"/>
+        <result property="changeType" column="change_type"/>
+        <result property="quantity" column="quantity"/>
+        <result property="beforeStock" column="before_stock"/>
+        <result property="afterStock" column="after_stock"/>
+        <result property="relatedDocumentType" column="related_document_type"/>
+        <result property="relatedDocumentId" column="related_document_id"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.StockHistory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stock_history (item_spec_id, change_type, quantity, before_stock, after_stock,
+                                    related_document_type, related_document_id, created_by, created_at)
+        VALUES (#{itemSpecId}, #{changeType}, #{quantity}, #{beforeStock}, #{afterStock},
+                #{relatedDocumentType}, #{relatedDocumentId}, #{createdBy}, #{createdAt})
+    </insert>
+
+    <select id="findByItemSpecId" resultMap="stockHistoryResultMap">
+        SELECT id, item_spec_id, change_type, quantity, before_stock, after_stock,
+               related_document_type, related_document_id, created_by, created_at
+        FROM stock_history
+        WHERE item_spec_id = #{itemSpecId}
+        ORDER BY created_at DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByItemSpecId" resultType="int">
+        SELECT COUNT(*) FROM stock_history WHERE item_spec_id = #{itemSpecId}
+    </select>
+
+</mapper>
