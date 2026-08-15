@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
 
 @Tag(name = "거래처", description = "매입처(SUPPLIER)/매출처(CUSTOMER) 거래처 관리")
 @SecurityRequirement(name = "bearerAuth")
@@ -45,7 +46,7 @@ public class PartnerController {
     @PostMapping
     public ResponseEntity<PartnerResponse> register(@Valid @RequestBody PartnerRequest request) {
         Partner partner = partnerService.register(request.toDomain());
-        return ResponseEntity.status(HttpStatus.CREATED).body(PartnerResponse.from(partner));
+        return ResponseEntity.created(URI.create("/api/partners/" + partner.getId())).body(PartnerResponse.from(partner));
     }
 
     @Operation(summary = "거래처 단건 조회")

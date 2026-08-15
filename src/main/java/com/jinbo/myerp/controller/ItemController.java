@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.util.List;
 
 @Tag(name = "품목", description = "품목 등록/조회 및 품목의 규격(ItemSpec) 등록/조회")
@@ -52,7 +53,8 @@ public class ItemController {
     public ResponseEntity<ItemResponse> register(@Valid @RequestBody ItemRequest request) {
         Item saved = itemService.register(request.toDomain(), request.certificationIdsOrEmpty());
         List<com.jinbo.myerp.domain.Certification> certifications = itemService.findCertifications(saved.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ItemResponse.from(saved, certifications));
+        return ResponseEntity.created(URI.create("/api/items/" + saved.getId()))
+                .body(ItemResponse.from(saved, certifications));
     }
 
     @Operation(summary = "품목 단건 조회", description = "연결된 인증정보 목록을 함께 반환한다.")

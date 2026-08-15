@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
 
 @Tag(name = "매출 전표", description = "매출 등록 시 규격별 재고가 자동 감소하고, 취소 시 자동으로 복원된다. " +
         "동시 요청에 대비해 재고 차감은 낙관적 락(버전 기반, 최대 3회 재시도)으로 처리한다.")
@@ -60,7 +61,7 @@ public class SaleController {
                 request.toDomain(),
                 request.items().stream().map(SaleItemRequest::toDomain).toList(),
                 currentUserId);
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.created(URI.create("/api/sales/" + saved.getId()))
                 .body(SaleResponse.from(saved, saleService.findItemsBySaleId(saved.getId())));
     }
 
