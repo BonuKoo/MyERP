@@ -1,6 +1,8 @@
 spring:
   application:
     name: myerp
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     url: jdbc:mysql://localhost:3306/erp_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: erp_user
@@ -18,3 +20,7 @@ mybatis:
 logging:
   level:
     com.jinbo.myerp.mapper: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:local-dev-only-secret-key-please-change-0123456789abcdef}
+  expiration-ms: 86400000
