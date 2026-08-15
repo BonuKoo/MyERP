@@ -16,8 +16,8 @@
     </resultMap>
 
     <insert id="insert" parameterType="com.jinbo.myerp.domain.CompanyUser" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO company_user (email, password, name, role, is_active)
-        VALUES (#{email}, #{password}, #{name}, #{role}, #{active})
+        INSERT INTO company_user (email, password, name, role, is_active, created_at, updated_at)
+        VALUES (#{email}, #{password}, #{name}, #{role}, #{active}, #{createdAt}, #{updatedAt})
     </insert>
 
     <select id="findById" resultMap="companyUserResultMap">

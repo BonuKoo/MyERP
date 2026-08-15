@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,7 +18,10 @@ public class PartnerService {
 
     @Transactional
     public Partner register(Partner partner) {
+        LocalDateTime now = LocalDateTime.now();
         partner.setActive(true);
+        partner.setCreatedAt(now);
+        partner.setUpdatedAt(now);
         partnerMapper.insert(partner);
         return partner;
     }
@@ -43,6 +47,7 @@ public class PartnerService {
         partner.setContactName(changes.getContactName());
         partner.setContactPhone(changes.getContactPhone());
         partner.setAddress(changes.getAddress());
+        partner.setUpdatedAt(LocalDateTime.now());
         partnerMapper.update(partner);
         return partner;
     }

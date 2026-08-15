@@ -18,8 +18,8 @@
     </resultMap>
 
     <insert id="insert" parameterType="com.jinbo.myerp.domain.Partner" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO partner (name, business_number, partner_type, contact_name, contact_phone, address, is_active)
-        VALUES (#{name}, #{businessNumber}, #{partnerType}, #{contactName}, #{contactPhone}, #{address}, #{active})
+        INSERT INTO partner (name, business_number, partner_type, contact_name, contact_phone, address, is_active, created_at, updated_at)
+        VALUES (#{name}, #{businessNumber}, #{partnerType}, #{contactName}, #{contactPhone}, #{address}, #{active}, #{createdAt}, #{updatedAt})
     </insert>
 
     <select id="findById" resultMap="partnerResultMap">
@@ -47,7 +47,8 @@
             contact_name = #{contactName},
             contact_phone = #{contactPhone},
             address = #{address},
-            is_active = #{active}
+            is_active = #{active},
+            updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>
 

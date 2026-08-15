@@ -10,6 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -23,12 +25,15 @@ public class AuthService {
             throw new EmailAlreadyExistsException(email);
         });
 
+        LocalDateTime now = LocalDateTime.now();
         CompanyUser companyUser = CompanyUser.builder()
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
                 .name(name)
                 .role(role)
                 .active(true)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
 
         companyUserMapper.insert(companyUser);
