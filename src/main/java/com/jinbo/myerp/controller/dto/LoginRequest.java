@@ -1,10 +1,11 @@
 package com.jinbo.myerp.controller.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
-        @NotBlank @Email String email,
-        @NotBlank String password
+        @NotBlank @Email @Schema(example = "owner@myerp.com") String email,
+        @NotBlank @Schema(example = "password123") String password
 ) {
 }
