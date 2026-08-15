@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: myerp
+  datasource:
+    url: jdbc:mysql://localhost:3306/erp_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: erp_user
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.jinbo.myerp.domain
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+
+logging:
+  level:
+    com.jinbo.myerp.mapper: DEBUG
