@@ -33,16 +33,20 @@ export default function SignupPage() {
           이메일
           <input
             type="email"
+            maxLength={100}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </label>
         <label>
-          비밀번호 (8자 이상)
+          비밀번호 (8~100자, 영문 대/소문자·숫자·특수문자 각 1자 이상 포함)
           <input
             type="password"
             minLength={8}
+            maxLength={100}
+            pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,100}"
+            title="8~100자이며 영문 대문자, 소문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다."
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
