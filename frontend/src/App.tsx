@@ -15,6 +15,9 @@ import CompanyInfoPage from './pages/CompanyInfoPage';
 import PurchaseListPage from './pages/PurchaseListPage';
 import PurchaseFormPage from './pages/PurchaseFormPage';
 import PurchaseDetailPage from './pages/PurchaseDetailPage';
+import SaleListPage from './pages/SaleListPage';
+import SaleFormPage from './pages/SaleFormPage';
+import SaleDetailPage from './pages/SaleDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +52,9 @@ export default function App() {
                 <Route path="/purchases" element={<PurchaseListPage />} />
                 <Route path="/purchases/new" element={<PurchaseFormPage />} />
                 <Route path="/purchases/:id" element={<PurchaseDetailPage />} />
+                <Route path="/sales" element={<SaleListPage />} />
+                <Route path="/sales/new" element={<SaleFormPage />} />
+                <Route path="/sales/:id" element={<SaleDetailPage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/partners" replace />} />

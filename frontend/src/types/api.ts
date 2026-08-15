@@ -2,6 +2,7 @@ export type UserRole = 'OWNER' | 'STAFF';
 export type PartnerType = 'SUPPLIER' | 'CUSTOMER' | 'BOTH';
 export type StockChangeType = 'PURCHASE_IN' | 'SALE_OUT' | 'ADJUST';
 export type PurchaseStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELED';
+export type SaleStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELED';
 
 export interface RegisterRequest {
   email: string;
@@ -203,6 +204,43 @@ export interface PurchaseResponse {
   createdAt: string;
   canceledAt: string | null;
   items: PurchaseItemResponse[];
+}
+
+export interface SaleItemRequest {
+  itemSpecId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface SaleItemResponse {
+  id: number;
+  itemSpecId: number;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface SaleRequest {
+  partnerId: number;
+  companyInfoId: number;
+  saleDate: string;
+  memo?: string;
+  items: SaleItemRequest[];
+}
+
+export interface SaleResponse {
+  id: number;
+  saleNo: string;
+  partnerId: number;
+  companyInfoId: number;
+  saleDate: string;
+  totalAmount: number;
+  status: SaleStatus;
+  memo: string | null;
+  createdBy: number;
+  createdAt: string;
+  canceledAt: string | null;
+  items: SaleItemResponse[];
 }
 
 export interface PageResponse<T> {
