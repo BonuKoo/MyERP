@@ -39,5 +39,18 @@ dependencies {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+		excludeTags 'integration'
+	}
+}
+
+tasks.register('integrationTest', Test) {
+	description = '실제 로컬 MySQL을 대상으로 하는 동시성 등 통합 테스트 (DB_PASSWORD 환경변수 필요)'
+	group = 'verification'
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	shouldRunAfter test
 }

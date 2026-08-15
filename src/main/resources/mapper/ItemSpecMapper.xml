@@ -55,4 +55,21 @@
         WHERE id = #{id}
     </update>
 
+    <select id="findByIdForUpdate" resultMap="itemSpecResultMap">
+        SELECT id, item_id, spec_name, unit, cost_price, sale_price, current_stock, safety_stock,
+               is_active, version, created_at, updated_at
+        FROM item_spec
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <update id="updateStockOptimistic">
+        UPDATE item_spec
+        SET current_stock = #{currentStock},
+            version = version + 1,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND version = #{version}
+    </update>
+
 </mapper>

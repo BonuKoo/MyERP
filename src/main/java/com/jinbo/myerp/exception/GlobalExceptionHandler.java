@@ -35,6 +35,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
     }
 
+    @ExceptionHandler(OptimisticLockConflictException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockConflict(OptimisticLockConflictException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
+    }
+
     @ExceptionHandler({
             PartnerNotFoundException.class,
             CompanyUserNotFoundException.class,
@@ -43,7 +48,8 @@ public class GlobalExceptionHandler {
             ItemNotFoundException.class,
             ItemSpecNotFoundException.class,
             CompanyInfoNotFoundException.class,
-            PurchaseNotFoundException.class
+            PurchaseNotFoundException.class,
+            SaleNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
