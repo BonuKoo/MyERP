@@ -97,3 +97,26 @@ CREATE TABLE stock_history (
     created_by              BIGINT NOT NULL,
     created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE purchase (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    purchase_no         VARCHAR(30) NOT NULL UNIQUE,
+    partner_id          BIGINT NOT NULL,
+    company_info_id     BIGINT NOT NULL,
+    purchase_date       DATE NOT NULL,
+    total_amount        DECIMAL(14,2) NOT NULL DEFAULT 0,
+    status              VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
+    memo                VARCHAR(255),
+    created_by          BIGINT NOT NULL,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    canceled_at         DATETIME
+);
+
+CREATE TABLE purchase_item (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    purchase_id     BIGINT NOT NULL,
+    item_spec_id    BIGINT NOT NULL,
+    quantity        INT NOT NULL,
+    unit_price      DECIMAL(12,2) NOT NULL,
+    amount          DECIMAL(14,2) NOT NULL
+);
