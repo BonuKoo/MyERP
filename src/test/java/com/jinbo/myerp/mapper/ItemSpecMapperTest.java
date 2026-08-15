@@ -98,4 +98,47 @@ class ItemSpecMapperTest {
         assertThat(updated.getCurrentStock()).isEqualTo(50);
         assertThat(updated.getVersion()).isEqualTo(1);
     }
+
+    @Test
+    void findByIdForUpdate_returnsRow() {
+        Long itemId = insertItem();
+        ItemSpec spec = newSpec(itemId, "20kg");
+        spec.setCurrentStock(30);
+        itemSpecMapper.insert(spec);
+
+        Optional<ItemSpec> found = itemSpecMapper.findByIdForUpdate(spec.getId());
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getCurrentStock()).isEqualTo(30);
+    }
+
+    @Test
+    void updateStockOptimistic_succeedsWhenVersionMatches() {
+        Long itemId = insertItem();
+        ItemSpec spec = newSpec(itemId, "20kg");
+        spec.setCurrentStock(30);
+        itemSpecMapper.insert(spec);
+
+        int affected = itemSpecMapper.updateStockOptimistic(spec.getId(), 10, 0, LocalDateTime.now());
+
+        assertThat(affected).isEqualTo(1);
+        ItemSpec updated = itemSpecMapper.findById(spec.getId()).orElseThrow();
+        assertThat(updated.getCurrentStock()).isEqualTo(10);
+        assertThat(updated.getVersion()).isEqualTo(1);
+    }
+
+    @Test
+    void updateStockOptimistic_returnsZeroWhenVersionStale() {
+        Long itemId = insertItem();
+        ItemSpec spec = newSpec(itemId, "20kg");
+        spec.setCurrentStock(30);
+        itemSpecMapper.insert(spec);
+
+        int affected = itemSpecMapper.updateStockOptimistic(spec.getId(), 10, 99, LocalDateTime.now());
+
+        assertThat(affected).isEqualTo(0);
+        ItemSpec unchanged = itemSpecMapper.findById(spec.getId()).orElseThrow();
+        assertThat(unchanged.getCurrentStock()).isEqualTo(30);
+        assertThat(unchanged.getVersion()).isEqualTo(0);
+    }
 }
