@@ -1,5 +1,6 @@
 export type UserRole = 'OWNER' | 'STAFF';
 export type PartnerType = 'SUPPLIER' | 'CUSTOMER' | 'BOTH';
+export type StockChangeType = 'PURCHASE_IN' | 'SALE_OUT' | 'ADJUST';
 
 export interface RegisterRequest {
   email: string;
@@ -51,6 +52,101 @@ export interface PartnerResponse {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CategoryMainRequest {
+  name: string;
+  displayOrder: number;
+}
+
+export interface CategoryMainResponse {
+  id: number;
+  name: string;
+  displayOrder: number;
+  active: boolean;
+}
+
+export interface CategorySubRequest {
+  categoryMainId: number;
+  name: string;
+  displayOrder: number;
+}
+
+export interface CategorySubResponse {
+  id: number;
+  categoryMainId: number;
+  name: string;
+  displayOrder: number;
+  active: boolean;
+}
+
+export interface CertificationRequest {
+  name: string;
+}
+
+export interface CertificationResponse {
+  id: number;
+  name: string;
+}
+
+export interface ItemRequest {
+  categorySubId: number;
+  name: string;
+  description?: string;
+  ksStandard?: string;
+  certificationIds?: number[];
+}
+
+export interface ItemResponse {
+  id: number;
+  categorySubId: number;
+  name: string;
+  description: string | null;
+  ksStandard: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  certifications: CertificationResponse[];
+}
+
+export interface ItemSpecRequest {
+  specName: string;
+  unit: string;
+  costPrice: number;
+  salePrice: number;
+  safetyStock: number;
+}
+
+export interface ItemSpecResponse {
+  id: number;
+  itemId: number;
+  specName: string;
+  unit: string;
+  costPrice: number;
+  salePrice: number;
+  currentStock: number;
+  safetyStock: number;
+  active: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockAdjustRequest {
+  quantityDelta: number;
+}
+
+export interface StockHistoryResponse {
+  id: number;
+  itemSpecId: number;
+  changeType: StockChangeType;
+  quantity: number;
+  beforeStock: number;
+  afterStock: number;
+  relatedDocumentType: string | null;
+  relatedDocumentId: number | null;
+  createdBy: number;
+  createdAt: string;
 }
 
 export interface PageResponse<T> {

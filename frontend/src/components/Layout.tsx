@@ -19,6 +19,8 @@ export default function Layout() {
         {isAuthenticated && (
           <nav>
             <Link to="/partners">거래처</Link>
+            <Link to="/categories">카테고리</Link>
+            <Link to="/items">품목</Link>
             <span className="user-info">
               {user?.name} ({user?.role})
             </span>

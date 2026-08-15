@@ -7,6 +7,10 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import PartnerListPage from './pages/PartnerListPage';
 import PartnerFormPage from './pages/PartnerFormPage';
+import CategoryPage from './pages/CategoryPage';
+import ItemListPage from './pages/ItemListPage';
+import ItemFormPage from './pages/ItemFormPage';
+import ItemDetailPage from './pages/ItemDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +37,10 @@ export default function App() {
                 <Route path="/partners" element={<PartnerListPage />} />
                 <Route path="/partners/new" element={<PartnerFormPage />} />
                 <Route path="/partners/:id/edit" element={<PartnerFormPage />} />
+                <Route path="/categories" element={<CategoryPage />} />
+                <Route path="/items" element={<ItemListPage />} />
+                <Route path="/items/new" element={<ItemFormPage />} />
+                <Route path="/items/:id" element={<ItemDetailPage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/partners" replace />} />
