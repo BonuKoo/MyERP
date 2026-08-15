@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.CompanyInfoMapper">
+
+    <resultMap id="companyInfoResultMap" type="com.jinbo.myerp.domain.CompanyInfo">
+        <id property="id" column="id"/>
+        <result property="companyName" column="company_name"/>
+        <result property="businessNumber" column="business_number"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="address" column="address"/>
+        <result property="phone" column="phone"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.CompanyInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO company_info (company_name, business_number, ceo_name, address, phone)
+        VALUES (#{companyName}, #{businessNumber}, #{ceoName}, #{address}, #{phone})
+    </insert>
+
+    <select id="findById" resultMap="companyInfoResultMap">
+        SELECT id, company_name, business_number, ceo_name, address, phone, created_at
+        FROM company_info
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="companyInfoResultMap">
+        SELECT id, company_name, business_number, ceo_name, address, phone, created_at
+        FROM company_info
+        ORDER BY id
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.CompanyInfo">
+        UPDATE company_info
+        SET company_name = #{companyName},
+            business_number = #{businessNumber},
+            ceo_name = #{ceoName},
+            address = #{address},
+            phone = #{phone}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
