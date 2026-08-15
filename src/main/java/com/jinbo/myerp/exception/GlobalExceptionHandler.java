@@ -20,7 +20,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.of(HttpStatus.UNAUTHORIZED, e.getMessage()));
     }
 
-    @ExceptionHandler({PartnerNotFoundException.class, CompanyUserNotFoundException.class})
+    @ExceptionHandler({
+            PartnerNotFoundException.class,
+            CompanyUserNotFoundException.class,
+            CategoryMainNotFoundException.class,
+            CategorySubNotFoundException.class,
+            ItemNotFoundException.class,
+            ItemSpecNotFoundException.class
+    })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
     }
