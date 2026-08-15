@@ -26,10 +26,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service("pessimisticLockSaleService")
 @RequiredArgsConstructor
 public class PessimisticLockSaleService implements SaleService {
+
+    private static final AtomicLong SALE_NO_SEQUENCE = new AtomicLong();
 
     private final SaleMapper saleMapper;
     private final SaleItemMapper saleItemMapper;
@@ -59,7 +62,7 @@ public class PessimisticLockSaleService implements SaleService {
             totalAmount = totalAmount.add(item.getAmount());
         }
 
-        sale.setSaleNo("SO" + System.currentTimeMillis());
+        sale.setSaleNo("SO" + System.currentTimeMillis() + "-" + SALE_NO_SEQUENCE.incrementAndGet());
         sale.setStatus(SaleStatus.CONFIRMED);
         sale.setTotalAmount(totalAmount);
         sale.setCreatedBy(userId);

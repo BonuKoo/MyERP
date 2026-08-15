@@ -26,12 +26,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service("optimisticLockSaleService")
 @RequiredArgsConstructor
 public class OptimisticLockSaleService implements SaleService {
 
     private static final int MAX_RETRIES = 3;
+    private static final AtomicLong SALE_NO_SEQUENCE = new AtomicLong();
 
     private final SaleMapper saleMapper;
     private final SaleItemMapper saleItemMapper;
@@ -59,7 +61,7 @@ public class OptimisticLockSaleService implements SaleService {
             totalAmount = totalAmount.add(item.getAmount());
         }
 
-        sale.setSaleNo("SO" + System.currentTimeMillis());
+        sale.setSaleNo("SO" + System.currentTimeMillis() + "-" + SALE_NO_SEQUENCE.incrementAndGet());
         sale.setStatus(SaleStatus.CONFIRMED);
         sale.setTotalAmount(totalAmount);
         sale.setCreatedBy(userId);
@@ -68,8 +70,11 @@ public class OptimisticLockSaleService implements SaleService {
 
         for (SaleItem item : items) {
             item.setSaleId(sale.getId());
-            saleItemMapper.insert(item);
+            // item_spec을 먼저 갱신해 배타락을 선점한 뒤 sale_item을 insert해야 한다.
+            // 순서가 바뀌면 sale_item의 FK 체크가 잡는 공유락 → 이후 갱신의 배타락 승격 요청이
+            // 동시 트랜잭션끼리 서로를 기다리는 데드락(락 승격 교착)을 유발할 수 있다.
             applyStockChange(item.getItemSpecId(), -item.getQuantity(), StockChangeType.SALE_OUT, sale.getId(), userId);
+            saleItemMapper.insert(item);
         }
 
         return sale;
