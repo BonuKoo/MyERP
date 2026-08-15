@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.PurchaseItemMapper">
+
+    <resultMap id="purchaseItemResultMap" type="com.jinbo.myerp.domain.PurchaseItem">
+        <id property="id" column="id"/>
+        <result property="purchaseId" column="purchase_id"/>
+        <result property="itemSpecId" column="item_spec_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="unitPrice" column="unit_price"/>
+        <result property="amount" column="amount"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.PurchaseItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO purchase_item (purchase_id, item_spec_id, quantity, unit_price, amount)
+        VALUES (#{purchaseId}, #{itemSpecId}, #{quantity}, #{unitPrice}, #{amount})
+    </insert>
+
+    <select id="findByPurchaseId" resultMap="purchaseItemResultMap">
+        SELECT id, purchase_id, item_spec_id, quantity, unit_price, amount
+        FROM purchase_item
+        WHERE purchase_id = #{purchaseId}
+        ORDER BY id
+    </select>
+
+</mapper>

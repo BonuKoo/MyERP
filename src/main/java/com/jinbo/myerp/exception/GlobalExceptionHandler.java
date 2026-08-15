@@ -30,13 +30,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
     }
 
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStatusTransition(InvalidStatusTransitionException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
+    }
+
     @ExceptionHandler({
             PartnerNotFoundException.class,
             CompanyUserNotFoundException.class,
             CategoryMainNotFoundException.class,
             CategorySubNotFoundException.class,
             ItemNotFoundException.class,
-            ItemSpecNotFoundException.class
+            ItemSpecNotFoundException.class,
+            CompanyInfoNotFoundException.class,
+            PurchaseNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
