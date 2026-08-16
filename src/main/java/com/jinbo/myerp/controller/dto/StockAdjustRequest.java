@@ -1,6 +1,7 @@
 package com.jinbo.myerp.controller.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 
 public record StockAdjustRequest(
@@ -9,4 +10,8 @@ public record StockAdjustRequest(
                 example = "10")
         Integer quantityDelta
 ) {
+    @AssertTrue(message = "quantityDelta는 0이 될 수 없습니다.")
+    public boolean isQuantityDeltaNonZero() {
+        return quantityDelta == null || quantityDelta != 0;
+    }
 }
