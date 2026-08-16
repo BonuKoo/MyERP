@@ -1,5 +1,7 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.4/index.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
 
 export const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 
@@ -119,4 +121,18 @@ export function classifyResponse(res, counters) {
   counters.unexpectedError.add(1);
   console.error(`예상 못한 응답: status=${res.status} body=${res.body}`);
   return 'unexpectedError';
+}
+
+/**
+ * handleSummary()를 각 스크립트마다 똑같이 반복하지 않도록 묶어둔 팩토리.
+ * 터미널 요약(stdout)은 그대로 유지하면서 k6/reports/{reportName}.html도 남긴다.
+ * reports/ 디렉터리는 실행할 때마다 생성되는 산출물이라 git엔 안 올라간다(.gitignore).
+ */
+export function buildHandleSummary(reportName) {
+  return function (data) {
+    return {
+      stdout: textSummary(data, { indent: ' ', enableColors: true }),
+      [`reports/${reportName}.html`]: htmlReport(data),
+    };
+  };
 }

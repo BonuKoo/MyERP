@@ -17,7 +17,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter } from 'k6/metrics';
-import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse } from './helpers.js';
+import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
 const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
@@ -81,3 +81,5 @@ export function teardown(data) {
   });
   console.log(`[load-multi-partner] 초기재고=${INITIAL_STOCK}, 최종재고=${finalStock}`);
 }
+
+export const handleSummary = buildHandleSummary('02b-load-multi-partner');
