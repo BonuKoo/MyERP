@@ -107,7 +107,7 @@ p95를 나란히 보면 된다. `02b`/`03b`가 뚜렷하게 더 빠르거나 더
   (`최종 재고는 절대 음수가 될 수 없음`)가 실패하면, 그건 곧바로 락에 실제
   버그가 있다는 뜻이므로 다른 무엇보다 먼저 봐야 한다.
 
-## 발견된 버그: 매출/매입/결제 등록 시 partner 행 데드락 (2026-08-16, 미수정)
+## 발견된 버그: 매출/매입/결제 등록 시 partner 행 데드락 (2026-08-16, 수정 완료)
 
 `01-smoke.js`를 처음 돌렸을 때 원래 기대(1명 성공 + 2명 409-재고부족)와 다르게
 2명이 500으로 실패했다. `sale_server_error_rate`가 66% 근처로 튀었고, 서버
@@ -148,14 +148,59 @@ MySQL이 둘 중 하나(여기선 A)를 강제로 실패시켜서 풀어준다.
 `./gradlew integrationTest`(`SaleConcurrencyIntegrationTest.optimisticLock_concurrentSales_neverOversellEvenUnderConflictRetries`)
 — 둘 다 100% 재현됨.
 
-**수정 방침(미착수)**: partner 잔액 조정을 자식 행 INSERT보다 먼저 실행해서
-배타 잠금을 선점하도록 순서를 바꾼다. `LedgerService`를 "잔액만 조정"(이른
-시점, 전표 ID 필요 없음)과 "이력 기록"(전표 ID가 나온 뒤)으로 쪼개야 한다.
-
-**별개로 발견한 문제(데드락과 무관)**: `pessimisticLock_concurrentSales_neverOversell`
+**별개로 발견한 문제(데드락과 무관, 같이 수정함)**: `pessimisticLock_concurrentSales_neverOversell`
 테스트의 `cleanUp()`이 `partner`를 지우려다 `ledger_entry`의 FK 제약에 걸려
-실패한다 — 5단계로 테이블이 하나 늘었는데 테스트 정리 순서가 그걸 반영 못 한
-것뿐이다. `ledger_entry`를 `partner`보다 먼저 지우도록 고치면 된다(미착수).
+실패했다 — 5단계로 테이블이 하나 늘었는데 테스트 정리 순서가 그걸 반영 못
+한 것. `cleanUp()`에서 `partner` 삭제보다 먼저 `ledger_entry`를 지우도록 수정.
+
+### 수정 (Before / After)
+
+`LedgerService`를 "잔액 조정"과 "이력 기록" 두 단계로 쪼갰다.
+
+**Before** — 한 번에 잔액 조정 + 이력 기록을 다 하는 메서드 하나뿐:
+```java
+// LedgerService
+public void recordReceivableChange(partnerId, changeType, amount, docType, docId, userId) {
+    partnerMapper.adjustReceivableBalance(partnerId, amount);
+    Partner partner = partnerMapper.findById(partnerId)...;
+    insertEntry(partnerId, RECEIVABLE, changeType, amount, partner.getReceivableBalance(), docType, docId, userId);
+}
+
+// OptimisticLockSaleService.register() — 문제의 순서
+saleMapper.insert(sale);                 // ① partner에 공유 잠금 (FK 체크)
+for (item) { 재고 차감; saleItemMapper.insert(item); }
+ledgerService.recordReceivableChange(...);  // ② partner에 배타 잠금 필요 ← ①과 충돌 가능
+```
+
+**After** — 잔액 조정(이른 시점)과 이력 기록(늦은 시점)을 분리해서, 잔액
+조정을 자식 행 insert보다 먼저 실행하도록 순서를 바꿨다:
+```java
+// LedgerService — 두 메서드로 분리
+public BigDecimal adjustReceivableBalance(partnerId, amount) {   // 잔액만, 전표 ID 불필요
+    partnerMapper.adjustReceivableBalance(partnerId, amount);
+    return partnerMapper.findById(partnerId)....getReceivableBalance();
+}
+public void recordEntry(partnerId, ledgerType, changeType, amount, balanceAfter, docType, docId, userId) {
+    insertEntry(...);   // 이력만, 잔액 미변경
+}
+// recordReceivableChange/recordPayableChange는 위 두 메서드를 합친 편의 메서드로
+// 남겨서 cancel() 계열(자식 행 insert가 없어 이 문제와 무관)에서 계속 사용
+
+// OptimisticLockSaleService.register() — 수정된 순서
+BigDecimal balanceAfter = ledgerService.adjustReceivableBalance(partnerId, totalAmount);  // ① partner 배타 잠금 선점
+saleMapper.insert(sale);                 // ② 이제 안전 — 이미 배타 잠금을 쥐고 있어 공유 잠금 요청이 즉시 통과
+for (item) { 재고 차감; saleItemMapper.insert(item); }
+ledgerService.recordEntry(partnerId, RECEIVABLE, changeType, totalAmount, balanceAfter, "SALE", sale.getId(), userId);  // ③ 전표 ID 확보 후 이력 기록
+```
+
+같은 패턴을 `PessimisticLockSaleService`/`PurchaseService`/`PaymentService`
+4곳 전부에 적용. 각 서비스 테스트에 Mockito `InOrder`로 "잔액 조정이 전표
+insert보다 먼저 호출된다"를 직접 검증하는 assertion을 추가.
+
+**검증 결과**: `SaleConcurrencyIntegrationTest`(JUnit, 실제 MySQL) 통과.
+`k6 run k6/01-smoke.js` 재실행 결과 — `sale_server_error_rate` 66%→**0%**,
+`sale_lock_conflict_rate`(정상적인 409) 0%→**66%**로 정확히 전환됨(오버셀
+없이 정상 동작 확인, 최종 재고 음수 체크도 통과).
 
 ## HTML 리포트
 
