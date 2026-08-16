@@ -15,8 +15,8 @@
  * 실행 타이밍을 조절할 것.
  */
 import http from 'k6/http';
-import { check } from 'k6';
-import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
+import { check, sleep } from 'k6';
+import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary, sampleServerMetrics } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
 const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
@@ -37,6 +37,14 @@ export const options = {
         { duration: '20s', target: 100 },
         { duration: '20s', target: 0 },   // 정리
       ],
+    },
+    // 어느 VU 구간에서 풀/스레드가 포화되는지를 응답시간과 같은 시간축에서 본다.
+    // 위 stages 총합(20s×6=120s)과 맞춰야 전 구간이 덮인다.
+    server_probe: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '120s',
+      exec: 'probeServer',
     },
   },
 };
@@ -61,6 +69,11 @@ export default function (data) {
   check(res, {
     '요청이 완전히 끊기지 않음(응답 자체는 옴)': (r) => r.status !== 0,
   });
+}
+
+export function probeServer(data) {
+  sampleServerMetrics(data.token);
+  sleep(1);
 }
 
 export function teardown(data) {

@@ -48,6 +48,51 @@ export function authHeaders(token) {
   return { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } };
 }
 
+// ================== 서버 내부 지표(actuator) ==================
+// k6가 보는 건 클라이언트 측 결과(응답시간/상태코드)뿐이라 "왜 느려졌는가"가
+// 추측이 된다. 부하와 같은 실행 안에서 actuator를 주기적으로 폴링해 같은 시간축
+// 위에 서버 내부 상태를 함께 남긴다 — 별도 수집 파이프라인이나 CSV 정렬 없이
+// 리포트 하나에서 "응답시간이 튄 구간에 풀이 말라 있었는지"를 바로 볼 수 있다.
+//
+// 주의 두 가지:
+// 1) 폴링 요청도 http_req_duration에 잡힌다. 부하 쪽 임계값은 반드시
+//    http_req_duration{scenario:...}로 범위를 좁혀야 이 요청들이 섞이지 않는다.
+// 2) tomcat.threads.busy에는 폴링 요청 자신도 1건 포함된다(상시 +1 정도).
+export const serverHikariActive = new Trend('server_hikari_active'); // 사용 중 커넥션
+export const serverHikariPending = new Trend('server_hikari_pending'); // 커넥션 대기 중인 스레드 — 0보다 크면 풀이 병목
+export const serverTomcatBusy = new Trend('server_tomcat_busy'); // 처리 중인 요청 스레드
+export const serverHeapUsedMb = new Trend('server_heap_used_mb'); // 힙 사용량(MB)
+
+function readMetricValue(token, name) {
+  const res = http.get(`${BASE_URL}/actuator/metrics/${name}`, {
+    headers: authHeaders(token).headers,
+    tags: { probe: 'actuator' },
+  });
+  if (res.status !== 200) return null;
+  try {
+    const measurements = res.json('measurements');
+    return measurements && measurements.length ? measurements[0].value : null;
+  } catch (e) {
+    return null; // 부하 때문에 응답이 깨져도 폴링이 테스트를 죽이면 안 된다
+  }
+}
+
+/**
+ * actuator에서 서버 내부 지표를 한 번 읽어 위 Trend들에 기록한다.
+ * 부하 시나리오와 별개인 1 VU 시나리오(server_probe)에서 1초 간격으로 호출한다.
+ */
+export function sampleServerMetrics(token) {
+  const active = readMetricValue(token, 'hikaricp.connections.active');
+  const pending = readMetricValue(token, 'hikaricp.connections.pending');
+  const busy = readMetricValue(token, 'tomcat.threads.busy');
+  const heapBytes = readMetricValue(token, 'jvm.memory.used');
+
+  if (active !== null) serverHikariActive.add(active);
+  if (pending !== null) serverHikariPending.add(pending);
+  if (busy !== null) serverTomcatBusy.add(busy);
+  if (heapBytes !== null) serverHeapUsedMb.add(heapBytes / 1024 / 1024);
+}
+
 /**
  * 테스트 전용 거래처/회사정보/카테고리/품목/규격을 새로 만들고 initialStock만큼 채운다.
  * 이름에 타임스탬프+난수를 붙여서 실데이터/다른 실행과 절대 안 겹치게 한다.

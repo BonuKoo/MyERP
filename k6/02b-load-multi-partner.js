@@ -16,7 +16,7 @@
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
+import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary, sampleServerMetrics } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
 const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
@@ -32,12 +32,20 @@ export const options = {
       vus: VUS,
       duration: '45s',
     },
+    // 02-load.js와 동일 조건으로 비교해야 하므로 서버 지표 수집도 똑같이 붙인다.
+    server_probe: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '45s',
+      exec: 'probeServer',
+    },
   },
   thresholds: {
     sale_client_error_rate: ['rate==0'],
     sale_server_error_rate: ['rate==0'],
     sale_connection_error_rate: ['rate==0'],
-    http_req_duration: ['p(95)<2000'],
+    // actuator 폴링 요청이 섞이지 않도록 부하 시나리오로 범위를 좁힌다.
+    'http_req_duration{scenario:sustained_load_multi_partner}': ['p(95)<2000'],
   },
 };
 
@@ -64,6 +72,11 @@ export default function (data) {
   });
 
   sleep(Math.random() * 0.3);
+}
+
+export function probeServer(data) {
+  sampleServerMetrics(data.token);
+  sleep(1);
 }
 
 export function teardown(data) {

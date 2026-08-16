@@ -19,10 +19,14 @@ k6, Spring Boot 앱, MySQL이 **전부 같은 PC**에서 실행된다. 서버 �
 
 | 항목 | 값 | 출처 |
 |---|---|---|
-| HikariCP `maximumPoolSize` | 10 | Spring Boot 기본값 (설정 없음) |
-| Tomcat `threads.max` | 200 | Spring Boot 기본값 (설정 없음) |
+| HikariCP `maximumPoolSize` | 10 | 기본값 — **actuator `hikaricp.connections.max`로 실측 확인** |
+| Tomcat `threads.max` | 200 | 기본값 — **actuator `tomcat.threads.config.max`로 실측 확인** |
 | MyBatis `defaultStatementTimeout` | 30초 | `application.yml` |
 | MyBatis `defaultFetchSize` | 100 | `application.yml` |
+
+(앞의 두 값은 "Spring Boot 기본값이니 그럴 것"이라는 추정이었는데, 관측성 작업 후
+실제 서버에서 조회해 확정했다. 통합 테스트 프로파일은 예외로
+`application-integration.yml`이 풀을 30으로 올려 쓴다.)
 
 ### 이 구성에서 나오는 수치의 한계
 
@@ -86,25 +90,37 @@ Little's law(동시성 = 처리량 × 응답시간)에 따라, VU를 늘렸는�
 `helpers.js`의 `classifyResponse()`가 응답마다 채운다. 상세는 `README.md`의
 "결과 읽는 법" 참고.
 
-### 서버측 — 미구현, 최우선 과제
+### 서버측 — 구현 완료 ✅
 
-현재 서버 내부를 볼 수단이 전혀 없다(`spring-boot-starter-actuator` 의존성 자체가
-없음). 그래서 "VU 80에서 느려졌다"까지는 알 수 있지만 **"왜"는 추측이 된다** —
-풀이 마른 건지, GC가 돈 건지, DB가 락 대기 중인지 구분할 방법이 없다. 이
-프로젝트의 원칙(추측 금지, 실측)과 정면으로 어긋나므로 시나리오 확장보다 먼저
-해결한다.
+원래 서버 내부를 볼 수단이 전혀 없어서(actuator 의존성 자체가 없었음) "VU 80에서
+느려졌다"까지만 알 수 있고 **"왜"는 추측**이었다. actuator를 도입해 해결했다.
 
-최소한 다음 4가지를 부하 중 시계열로 수집한다.
+**수집 방식**: 별도 수집 파이프라인이나 CSV 정렬 없이, **부하와 같은 k6 실행 안에서
+`server_probe` 시나리오(1 VU, 1초 간격)가 actuator를 폴링**한다. 같은 리포트에 같은
+시간축으로 남으므로 "응답시간이 튄 구간에 풀이 말라 있었는지"를 바로 볼 수 있다.
+구현은 `helpers.js`의 `sampleServerMetrics()`, 적용 대상은 `02`/`02b`/`03`/`03b`
+(`01-smoke.js`는 요청 3건짜리 정합성 확인이라 서버 지표가 의미 없어 제외).
 
-| 대상 | 지표 | 무엇을 판정하나 |
+| k6 지표 | actuator 원본 | 무엇을 판정하나 |
 |---|---|---|
-| HikariCP | active / idle / pending 커넥션, 획득 대기시간 | 풀이 병목인가 |
-| JVM | 힙 사용량, GC 횟수·일시정지 시간 | GC가 응답시간 튐의 원인인가 |
-| Tomcat | busy 스레드 수 | 요청이 스레드 레벨에서 밀리는가 |
-| MySQL | `Threads_running`, 락 대기 | 병목이 앱이 아니라 DB인가 |
+| `server_hikari_active` | `hikaricp.connections.active` | 풀을 실제로 얼마나 쓰는가 |
+| `server_hikari_pending` | `hikaricp.connections.pending` | **0보다 크면 풀이 병목** |
+| `server_tomcat_busy` | `tomcat.threads.busy` | 요청이 스레드 레벨에서 밀리는가 |
+| `server_heap_used_mb` | `jvm.memory.used` | 힙이 계속 증가하는가(누수) |
 
-수집 방식은 관측성 작업에서 확정한다. 요건은 **k6 결과와 같은 시간축에 겹쳐볼 수
-있어야 한다**는 것 — 그래야 병목 지목이 추측에서 실측이 된다.
+**주의 두 가지** (스크립트 주석에도 적어둠):
+1. 폴링 요청도 `http_req_duration`에 잡힌다. 부하 쪽 임계값은 반드시
+   `http_req_duration{scenario:...}`로 범위를 좁혀야 한다 — 안 좁히면 훨씬 빠른
+   폴링 요청이 섞여 p95가 실제보다 낙관적으로 나온다(실측으로 확인: 전체 24.23ms
+   vs 부하 시나리오만 24.44ms).
+2. `tomcat.threads.busy`에는 폴링 요청 자신이 상시 1건 포함된다.
+
+**아직 안 되는 것**: MySQL 쪽(`Threads_running`, 락 대기)은 actuator로 잡히지
+않는다. 앱이 아니라 DB가 병목으로 의심되면 그때 `SHOW ENGINE INNODB STATUS`
+계열을 별도로 붙인다(데드락 조사 때 쓴 방법과 동일).
+
+`jvm.gc.pause`도 노출은 되지만 Trend로 수집하진 않는다 — GC가 응답시간 튐의
+원인으로 의심될 때 추가한다.
 
 ---
 
@@ -201,7 +217,7 @@ B1과 B2를 **대조군으로 짝지어** 돌리는 것이 핵심이다. `ledger
 
 ## 5. 진행 순서
 
-1. **서버측 관측성 확보** — 이게 없으면 A2 이후가 전부 추측이 된다.
+1. ~~**서버측 관측성 확보**~~ ✅ 완료 (3절 참고)
 2. **A1 낙관 vs 비관 락 비교** — 이미 만들어둔 자산을 활용하고, 결과물의 설명력이
    가장 크다.
 3. A2 커넥션 풀 스윕

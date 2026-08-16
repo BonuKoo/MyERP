@@ -11,7 +11,7 @@
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
+import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary, sampleServerMetrics } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
 const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
@@ -26,6 +26,14 @@ export const options = {
       vus: 8,
       duration: '45s',
     },
+    // 부하와 같은 시간축에서 서버 내부(풀/스레드/힙)를 1초마다 샘플링한다.
+    // 부하 시나리오와 duration을 맞춰야 구간이 겹친다.
+    server_probe: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '45s',
+      exec: 'probeServer',
+    },
   },
   thresholds: {
     // 재고 소진에 의한 409는 이 테스트에선 거의 안 나올 것으로 예상(재고 넉넉).
@@ -33,7 +41,9 @@ export const options = {
     sale_client_error_rate: ['rate==0'],
     sale_server_error_rate: ['rate==0'],
     sale_connection_error_rate: ['rate==0'],
-    http_req_duration: ['p(95)<2000'],
+    // scenario로 범위를 좁힌다 — 범위를 안 좁히면 훨씬 빠른 actuator 폴링 요청이
+    // 섞여서 p95가 실제보다 낙관적으로 나온다.
+    'http_req_duration{scenario:sustained_load}': ['p(95)<2000'],
   },
 };
 
@@ -59,6 +69,11 @@ export default function (data) {
   });
 
   sleep(Math.random() * 0.3); // 완전 락스텝 방지 — 사람이 연속 클릭하는 정도의 텀
+}
+
+export function probeServer(data) {
+  sampleServerMetrics(data.token);
+  sleep(1);
 }
 
 export function teardown(data) {
