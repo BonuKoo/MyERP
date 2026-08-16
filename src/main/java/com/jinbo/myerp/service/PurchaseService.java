@@ -1,6 +1,7 @@
 package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
 import com.jinbo.myerp.domain.Purchase;
 import com.jinbo.myerp.domain.PurchaseItem;
 import com.jinbo.myerp.domain.PurchaseStatus;
@@ -37,6 +38,7 @@ public class PurchaseService {
     private final CompanyInfoMapper companyInfoMapper;
     private final ItemSpecMapper itemSpecMapper;
     private final StockHistoryMapper stockHistoryMapper;
+    private final LedgerService ledgerService;
 
     @Transactional
     public Purchase register(Purchase purchase, List<PurchaseItem> items, Long userId) {
@@ -68,6 +70,9 @@ public class PurchaseService {
             purchaseItemMapper.insert(item);
             increaseStock(specs.get(i), item.getQuantity(), purchase.getId(), userId);
         }
+
+        ledgerService.recordPayableChange(purchase.getPartnerId(), LedgerChangeType.PURCHASE_CONFIRMED,
+                totalAmount, "PURCHASE", purchase.getId(), userId);
 
         return purchase;
     }
@@ -126,6 +131,9 @@ public class PurchaseService {
         purchase.setStatus(PurchaseStatus.CANCELED);
         purchase.setCanceledAt(LocalDateTime.now());
         purchaseMapper.updateStatus(purchase);
+
+        ledgerService.recordPayableChange(purchase.getPartnerId(), LedgerChangeType.PURCHASE_CANCELED,
+                purchase.getTotalAmount().negate(), "PURCHASE", purchase.getId(), userId);
 
         return purchase;
     }

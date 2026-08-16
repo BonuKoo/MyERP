@@ -1,6 +1,7 @@
 package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
 import com.jinbo.myerp.domain.Sale;
 import com.jinbo.myerp.domain.SaleItem;
 import com.jinbo.myerp.domain.SaleStatus;
@@ -41,6 +42,7 @@ public class OptimisticLockSaleService implements SaleService {
     private final CompanyInfoMapper companyInfoMapper;
     private final ItemSpecMapper itemSpecMapper;
     private final StockHistoryMapper stockHistoryMapper;
+    private final LedgerService ledgerService;
 
     @Override
     @Transactional
@@ -76,6 +78,9 @@ public class OptimisticLockSaleService implements SaleService {
             applyStockChange(item.getItemSpecId(), -item.getQuantity(), StockChangeType.SALE_OUT, sale.getId(), userId);
             saleItemMapper.insert(item);
         }
+
+        ledgerService.recordReceivableChange(sale.getPartnerId(), LedgerChangeType.SALE_CONFIRMED,
+                totalAmount, "SALE", sale.getId(), userId);
 
         return sale;
     }
@@ -145,6 +150,9 @@ public class OptimisticLockSaleService implements SaleService {
         sale.setStatus(SaleStatus.CANCELED);
         sale.setCanceledAt(LocalDateTime.now());
         saleMapper.updateStatus(sale);
+
+        ledgerService.recordReceivableChange(sale.getPartnerId(), LedgerChangeType.SALE_CANCELED,
+                sale.getTotalAmount().negate(), "SALE", sale.getId(), userId);
 
         return sale;
     }

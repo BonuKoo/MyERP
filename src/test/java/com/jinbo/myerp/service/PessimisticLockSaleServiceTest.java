@@ -2,6 +2,7 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.CompanyInfo;
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.PartnerType;
 import com.jinbo.myerp.domain.Sale;
@@ -61,6 +62,9 @@ class PessimisticLockSaleServiceTest {
     @Mock
     private StockHistoryMapper stockHistoryMapper;
 
+    @Mock
+    private LedgerService ledgerService;
+
     @InjectMocks
     private PessimisticLockSaleService saleService;
 
@@ -99,6 +103,9 @@ class PessimisticLockSaleServiceTest {
         assertThat(history.getBeforeStock()).isEqualTo(50);
         assertThat(history.getAfterStock()).isEqualTo(30);
         assertThat(history.getCreatedBy()).isEqualTo(99L);
+
+        verify(ledgerService).recordReceivableChange(1L, LedgerChangeType.SALE_CONFIRMED,
+                new BigDecimal("400000"), "SALE", result.getId(), 99L);
     }
 
     @Test
@@ -167,7 +174,8 @@ class PessimisticLockSaleServiceTest {
 
     @Test
     void cancel_success_reversesStockAndRecordsHistory() {
-        Sale sale = Sale.builder().id(1L).status(SaleStatus.CONFIRMED).build();
+        Sale sale = Sale.builder().id(1L).partnerId(1L).status(SaleStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("400000")).build();
         given(saleMapper.findById(1L)).willReturn(Optional.of(sale));
         SaleItem item = SaleItem.builder().id(1L).saleId(1L).itemSpecId(10L).quantity(20).build();
         given(saleItemMapper.findBySaleId(1L)).willReturn(List.of(item));
@@ -187,6 +195,9 @@ class PessimisticLockSaleServiceTest {
         verify(stockHistoryMapper).insert(captor.capture());
         assertThat(captor.getValue().getChangeType()).isEqualTo(StockChangeType.ADJUST);
         assertThat(captor.getValue().getQuantity()).isEqualTo(20);
+
+        verify(ledgerService).recordReceivableChange(1L, LedgerChangeType.SALE_CANCELED,
+                new BigDecimal("400000").negate(), "SALE", 1L, 99L);
     }
 
     @Test
@@ -199,5 +210,6 @@ class PessimisticLockSaleServiceTest {
 
         verify(itemSpecMapper, never()).update(any());
         verify(stockHistoryMapper, never()).insert(any());
+        verify(ledgerService, never()).recordReceivableChange(any(), any(), any(), any(), any(), any());
     }
 }
