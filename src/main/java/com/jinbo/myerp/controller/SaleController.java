@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +36,10 @@ public class SaleController {
 
     private final SaleService saleService;
 
-    public SaleController(@Qualifier("optimisticLockSaleService") SaleService saleService) {
+    // 어느 락 전략을 쓸지는 SaleLockStrategyConfig가 myerp.sale.lock-strategy 설정으로
+    // 정한다(기본: 낙관적 락). 여기서 특정 구현으로 고정하면 두 전략을 같은 부하로
+    // 비교할 수 없다 — k6/LOAD_TEST_PLAN.md A1 참고.
+    public SaleController(SaleService saleService) {
         this.saleService = saleService;
     }
 
