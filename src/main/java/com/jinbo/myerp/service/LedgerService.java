@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,13 @@ public class LedgerService {
                 .orElseThrow(() -> new PartnerNotFoundException(partnerId));
         insertEntry(partnerId, LedgerType.PAYABLE, changeType, amount, partner.getPayableBalance(),
                 relatedDocumentType, relatedDocumentId, userId);
+    }
+
+    public PageResult<LedgerEntry> findByPartnerId(Long partnerId, int page, int size) {
+        int offset = page * size;
+        List<LedgerEntry> content = ledgerEntryMapper.findByPartnerId(partnerId, offset, size);
+        long totalCount = ledgerEntryMapper.countByPartnerId(partnerId);
+        return new PageResult<>(content, totalCount, page, size);
     }
 
     private void insertEntry(Long partnerId, LedgerType ledgerType, LedgerChangeType changeType, BigDecimal amount,

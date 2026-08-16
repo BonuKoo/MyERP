@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,5 +72,17 @@ class LedgerServiceTest {
         assertThat(entry.getLedgerType()).isEqualTo(LedgerType.PAYABLE);
         assertThat(entry.getChangeType()).isEqualTo(LedgerChangeType.PURCHASE_CONFIRMED);
         assertThat(entry.getBalanceAfter()).isEqualByComparingTo("150000.00");
+    }
+
+    @Test
+    void findByPartnerId_returnsPageResult() {
+        List<LedgerEntry> entries = List.of(LedgerEntry.builder().id(1L).partnerId(1L).build());
+        given(ledgerEntryMapper.findByPartnerId(1L, 0, 20)).willReturn(entries);
+        given(ledgerEntryMapper.countByPartnerId(1L)).willReturn(1);
+
+        PageResult<LedgerEntry> result = ledgerService.findByPartnerId(1L, 0, 20);
+
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.totalCount()).isEqualTo(1);
     }
 }
