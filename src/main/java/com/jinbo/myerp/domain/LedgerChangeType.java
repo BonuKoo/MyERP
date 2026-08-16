@@ -1,0 +1,12 @@
+package com.jinbo.myerp.domain;
+
+public enum LedgerChangeType {
+    SALE_CONFIRMED,
+    SALE_CANCELED,
+    PURCHASE_CONFIRMED,
+    PURCHASE_CANCELED,
+    PAYMENT_RECEIVED,
+    PAYMENT_RECEIVED_CANCELED,
+    PAYMENT_PAID,
+    PAYMENT_PAID_CANCELED
+}

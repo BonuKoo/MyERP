@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.LedgerEntryMapper">
+
+    <resultMap id="ledgerEntryResultMap" type="com.jinbo.myerp.domain.LedgerEntry">
+        <id property="id" column="id"/>
+        <result property="partnerId" column="partner_id"/>
+        <result property="ledgerType" column="ledger_type"/>
+        <result property="changeType" column="change_type"/>
+        <result property="amount" column="amount"/>
+        <result property="balanceAfter" column="balance_after"/>
+        <result property="relatedDocumentType" column="related_document_type"/>
+        <result property="relatedDocumentId" column="related_document_id"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.LedgerEntry" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ledger_entry (partner_id, ledger_type, change_type, amount, balance_after,
+                                   related_document_type, related_document_id, created_by, created_at)
+        VALUES (#{partnerId}, #{ledgerType}, #{changeType}, #{amount}, #{balanceAfter},
+                #{relatedDocumentType}, #{relatedDocumentId}, #{createdBy}, #{createdAt})
+    </insert>
+
+    <select id="findByPartnerId" resultMap="ledgerEntryResultMap">
+        SELECT id, partner_id, ledger_type, change_type, amount, balance_after,
+               related_document_type, related_document_id, created_by, created_at
+        FROM ledger_entry
+        WHERE partner_id = #{partnerId}
+        ORDER BY created_at DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByPartnerId" resultType="int">
+        SELECT COUNT(*) FROM ledger_entry WHERE partner_id = #{partnerId}
+    </select>
+
+</mapper>

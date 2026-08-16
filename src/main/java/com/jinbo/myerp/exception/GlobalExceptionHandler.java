@@ -53,7 +53,8 @@ public class GlobalExceptionHandler {
             ItemSpecNotFoundException.class,
             CompanyInfoNotFoundException.class,
             PurchaseNotFoundException.class,
-            SaleNotFoundException.class
+            SaleNotFoundException.class,
+            PaymentNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
