@@ -11,7 +11,6 @@
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Counter } from 'k6/metrics';
 import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
@@ -19,14 +18,6 @@ const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
 
 const QUANTITY = 1;
 const INITIAL_STOCK = 5000;
-
-const counters = {
-  success: new Counter('sale_success'),
-  insufficientStock: new Counter('sale_insufficient_stock'),
-  lockConflict: new Counter('sale_lock_conflict'),
-  connectionError: new Counter('sale_connection_error'),
-  unexpectedError: new Counter('sale_unexpected_error'),
-};
 
 export const options = {
   scenarios: {
@@ -39,8 +30,8 @@ export const options = {
   thresholds: {
     // 재고 소진에 의한 409는 이 테스트에선 거의 안 나올 것으로 예상(재고 넉넉).
     // 진짜 서버 결함(5xx, 커넥션 실패)만 실패로 간주한다.
-    sale_unexpected_error: ['count==0'],
-    sale_connection_error: ['count==0'],
+    sale_server_error_rate: ['rate==0'],
+    sale_connection_error_rate: ['rate==0'],
     http_req_duration: ['p(95)<2000'],
   },
 };
@@ -60,7 +51,7 @@ export default function (data) {
   });
 
   const res = http.post(`${BASE_URL}/api/sales`, body, authHeaders(data.token));
-  classifyResponse(res, counters);
+  classifyResponse(res);
 
   check(res, {
     '201 또는 409만 정상': (r) => r.status === 201 || r.status === 409,

@@ -1,9 +1,27 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { Counter, Rate, Trend } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.4/index.js';
-import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
+// main 브랜치 추종 대신 태그 고정(재현성) — 2026-08-16 존재 확인
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/2.4.0/dist/bundle.js';
 
 export const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
+
+// ================== 매출 등록(POST /api/sales) 결과 지표 ==================
+// classifyResponse()가 매 응답마다 채운다. 스크립트마다 각자 Counter를 새로
+// 만들던 방식을 걷어내고 여기 한 곳으로 모아서, 02 vs 02b/03 vs 03b 비교 시
+// 지표 이름·의미가 스크립트마다 어긋나지 않게 한다.
+export const saleResponseTime = new Trend('sale_response_time'); // ms, http_req_duration과 별개로 이 도메인 전용 이름을 갖게
+export const saleStatusCodes = new Counter('sale_status_codes'); // {status: "201"} 태그로 상태코드 분포
+export const saleSuccessRate = new Rate('sale_success_rate'); // 201
+export const saleInsufficientStockRate = new Rate('sale_insufficient_stock_rate'); // 409, 재고부족
+export const saleLockConflictRate = new Rate('sale_lock_conflict_rate'); // 409, 낙관적 락 충돌(메시지에 "충돌" 포함)
+export const saleServerErrorRate = new Rate('sale_server_error_rate'); // 5xx — smoke/load/stress 전부 0이어야 정상
+export const saleConnectionErrorRate = new Rate('sale_connection_error_rate'); // status 0(연결 실패/타임아웃)
+export const saleAuthErrorCount = new Counter('sale_auth_error_count'); // 401/403 — 테스트 자체가 잘못됐다는 신호
+// 5xx/그 외 예상 못한 응답의 원인 메시지별 카운트. 데드락처럼 원인이 뒤섞일 수
+// 있는 500을 하나로 뭉뚱그리지 않고 {message: ...} 태그로 쪼개서 보기 위함.
+export const saleErrorMessages = new Counter('sale_error_messages');
 
 export function login(email, password) {
   const res = http.post(
@@ -101,24 +119,52 @@ export function fetchCurrentStock(token, itemId, itemSpecId) {
   return spec ? spec.currentStock : null;
 }
 
-export function classifyResponse(res, counters) {
-  if (res.status === 201) {
-    counters.success.add(1);
-    return 'success';
+function extractErrorMessage(res) {
+  try {
+    const body = res.json();
+    if (body && typeof body.message === 'string') return body.message;
+  } catch (e) {
+    // JSON이 아닌 바디(빈 응답, 연결 실패 등) — 상태코드로 대체
   }
-  if (res.status === 409 && typeof res.body === 'string' && res.body.includes('충돌')) {
-    counters.lockConflict.add(1);
-    return 'lockConflict';
+  return `status_${res.status}`;
+}
+
+/**
+ * 매출 등록 응답 하나를 분류하면서 위 지표들을 전부 채운다.
+ * Rate 지표는 매 호출마다 true/false를 넘겨야 "전체 요청 대비 비율"이 맞게
+ * 계산된다(해당되는 경우에만 add(1)을 부르면 그 지표의 모수가 좁아져서
+ * 비율이 왜곡된다) — 그래서 아래 5개 Rate.add()는 매번 전부 호출한다.
+ */
+export function classifyResponse(res) {
+  saleResponseTime.add(res.timings.duration);
+  saleStatusCodes.add(1, { status: String(res.status) });
+
+  const isSuccess = res.status === 201;
+  const isConflict = res.status === 409;
+  const isLockConflict = isConflict && typeof res.body === 'string' && res.body.includes('충돌');
+  const isInsufficientStock = isConflict && !isLockConflict;
+  const isConnectionError = res.status === 0;
+  const isAuthError = res.status === 401 || res.status === 403;
+  const isServerError = res.status >= 500;
+
+  saleSuccessRate.add(isSuccess);
+  saleInsufficientStockRate.add(isInsufficientStock);
+  saleLockConflictRate.add(isLockConflict);
+  saleServerErrorRate.add(isServerError);
+  saleConnectionErrorRate.add(isConnectionError);
+
+  if (isAuthError) {
+    saleAuthErrorCount.add(1, { status: String(res.status) });
   }
-  if (res.status === 409) {
-    counters.insufficientStock.add(1);
-    return 'insufficientStock';
-  }
-  if (res.status === 0) {
-    counters.connectionError.add(1);
-    return 'connectionError';
-  }
-  counters.unexpectedError.add(1);
+
+  if (isSuccess) return 'success';
+  if (isLockConflict) return 'lockConflict';
+  if (isInsufficientStock) return 'insufficientStock';
+  if (isConnectionError) return 'connectionError';
+
+  // 여기 도달하는 건 201/409/0이 아닌 전부(주로 5xx) — 원인 메시지별로 쪼개서 기록.
+  const message = extractErrorMessage(res);
+  saleErrorMessages.add(1, { message, status: String(res.status) });
   console.error(`예상 못한 응답: status=${res.status} body=${res.body}`);
   return 'unexpectedError';
 }
@@ -132,7 +178,7 @@ export function buildHandleSummary(reportName) {
   return function (data) {
     return {
       stdout: textSummary(data, { indent: ' ', enableColors: true }),
-      [`reports/${reportName}.html`]: htmlReport(data),
+      [`k6/reports/${reportName}.html`]: htmlReport(data),
     };
   };
 }

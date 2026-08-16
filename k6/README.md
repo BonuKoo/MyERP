@@ -76,14 +76,26 @@ p95를 나란히 보면 된다. `02b`/`03b`가 뚜렷하게 더 빠르거나 더
 
 ## 결과 읽는 법
 
-- `sale_success` / `sale_insufficient_stock` / `sale_lock_conflict`: 정상적인
-  비즈니스 분기. 몇 건이든 문제 아님.
-- `sale_unexpected_error`: 409/201이 아닌 응답(주로 500). **smoke/load에서는
-  0이어야 정상.** stress에서는 특정 VU 수를 넘는 순간부터 늘어날 걸로 예상되고,
-  그 지점이 바로 "한계"다.
-- `sale_connection_error`: 응답 자체를 못 받은 경우(연결 실패/타임아웃).
-  stress에서 VU가 10(HikariCP 풀 크기)을 크게 넘는 구간부터 나타나기 시작하면
+지표는 전부 `helpers.classifyResponse()` 한 곳에서 채운다(스크립트마다 이름이
+어긋나지 않게). 응답 하나마다 `sale_status_codes`(상태코드별 카운트)와
+`sale_response_time`(Trend, `http_req_duration`과 별개로 이 도메인 전용) 두
+개는 항상 채워지고, 나머지는 분류에 따라 갈린다:
+
+- `sale_success_rate` / `sale_insufficient_stock_rate` / `sale_lock_conflict_rate`:
+  정상적인 비즈니스 분기 비율(201 / 409-재고부족 / 409-락충돌). 몇 %든 그 자체로
+  문제는 아님 — smoke는 재고를 일부러 부족하게 잡아서 insufficient_stock이
+  나오는 게 오히려 의도된 결과다.
+- `sale_server_error_rate`: 5xx 비율. **smoke/load/02b/03b 전부 0이어야 정상.**
+  0이 아니면 실제 서버 결함(대개 데드락)이므로 최우선으로 봐야 한다.
+- `sale_connection_error_rate`: 응답 자체를 못 받은 비율(연결 실패/타임아웃).
+  stress에서 VU가 10(HikariCP 풀 크기)을 크게 넘는 구간부터 올라가기 시작하면
   풀 크기가 병목이라는 뜻.
+- `sale_error_messages`: `sale_server_error_rate`가 0이 아닐 때 원인을 메시지별로
+  쪼개서 보여준다(`{message: "...", status: "500"}` 태그). 500 하나로 뭉뚱그리지
+  않고 "어떤 에러가 몇 건인지"를 바로 구분할 수 있다 — 데드락처럼 여러 원인이
+  섞일 수 있는 5xx를 진단할 때 특히 필요.
+- `sale_auth_error_count`: 401/403이 하나라도 찍히면 테스트 자체가 잘못된 것
+  (토큰 만료, 계정 오류 등) — 서버 결함이 아니라 테스트 셋업 문제라는 신호.
 - 마지막 `[stress] 초기재고=... 최종재고=...` 로그와 재고 음수 체크
   (`최종 재고는 절대 음수가 될 수 없음`)가 실패하면, 그건 곧바로 락에 실제
   버그가 있다는 뜻이므로 다른 무엇보다 먼저 봐야 한다.

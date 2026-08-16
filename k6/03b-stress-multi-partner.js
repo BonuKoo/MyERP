@@ -17,7 +17,6 @@
  */
 import http from 'k6/http';
 import { check } from 'k6';
-import { Counter } from 'k6/metrics';
 import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
@@ -26,14 +25,6 @@ const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
 const MAX_VUS = 100;
 const QUANTITY = 1;
 const INITIAL_STOCK = 100000;
-
-const counters = {
-  success: new Counter('sale_success'),
-  insufficientStock: new Counter('sale_insufficient_stock'),
-  lockConflict: new Counter('sale_lock_conflict'),
-  connectionError: new Counter('sale_connection_error'),
-  unexpectedError: new Counter('sale_unexpected_error'),
-};
 
 export const options = {
   scenarios: {
@@ -68,7 +59,7 @@ export default function (data) {
   });
 
   const res = http.post(`${BASE_URL}/api/sales`, body, authHeaders(data.token));
-  classifyResponse(res, counters);
+  classifyResponse(res);
 
   check(res, {
     '요청이 완전히 끊기지 않음(응답 자체는 옴)': (r) => r.status !== 0,

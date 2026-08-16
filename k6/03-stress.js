@@ -8,7 +8,7 @@
  *
  * 임계값(thresholds)을 강하게 걸지 않는다 — 이 테스트의 목적은 통과/실패 판정이
  * 아니라 어디서 꺾이는지를 관찰하는 것. k6 요약 출력에서 각 스테이지 구간별
- * http_req_duration/http_req_failed 추이와 sale_connection_error 카운트를 보면 된다.
+ * http_req_duration/http_req_failed 추이와 sale_connection_error_rate를 보면 된다.
  *
  * 실행: k6 run k6/03-stress.js
  * 주의: 로컬 개발 서버·DB에 실제로 부하가 걸린다. 운영 중인 다른 작업이 있다면
@@ -16,7 +16,6 @@
  */
 import http from 'k6/http';
 import { check } from 'k6';
-import { Counter } from 'k6/metrics';
 import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
@@ -24,14 +23,6 @@ const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
 
 const QUANTITY = 1;
 const INITIAL_STOCK = 100000;
-
-const counters = {
-  success: new Counter('sale_success'),
-  insufficientStock: new Counter('sale_insufficient_stock'),
-  lockConflict: new Counter('sale_lock_conflict'),
-  connectionError: new Counter('sale_connection_error'),
-  unexpectedError: new Counter('sale_unexpected_error'),
-};
 
 export const options = {
   scenarios: {
@@ -65,7 +56,7 @@ export default function (data) {
   });
 
   const res = http.post(`${BASE_URL}/api/sales`, body, authHeaders(data.token));
-  classifyResponse(res, counters);
+  classifyResponse(res);
 
   check(res, {
     '요청이 완전히 끊기지 않음(응답 자체는 옴)': (r) => r.status !== 0,
