@@ -35,16 +35,42 @@ HikariCP 커넥션 풀 10개, Tomcat 최대 스레드 200개. 아래 세 스크�
 새로 만들어 실데이터와 절대 섞이지 않는다. 끝나면(`teardown()`) 실제 재고를
 다시 조회해 **음수가 아닌지**를 자동으로 확인한다.
 
+## 원장(5단계) 도입 이후 추가된 변형 — `02b`/`03b`
+
+`OptimisticLockSaleService.register()`는 재고 차감 뒤 같은 트랜잭션 안에서
+`LedgerService.recordReceivableChange`를 호출해 `partner.receivable_balance`를
+갱신한다. item_spec 쪽은 낙관적 락(대기 없이 재시도)이지만, partner 쪽은
+`UPDATE ... WHERE id=?`로 진짜 DB 행 잠금을 건다.
+
+`02-load.js`/`03-stress.js`는 전 VU가 거래처 1개를 공유하기 때문에, 이 partner
+행 잠금 경합이 item_spec 낙관적 락 성능과 뒤섞여서 측정된다. `02b-load-multi-partner.js`/
+`03b-stress-multi-partner.js`는 조건은 완전히 동일하되 VU마다 서로 다른 거래처를
+써서 partner 잠금 경합을 제거한다 — item_spec 재고/조건은 그대로 공유되므로
+그 변수는 고정된 채로, "원장 잠금이 얼마나 발목을 잡는지"만 분리해서 본다.
+
+`01-smoke.js`는 원래 목적(락 정합성의 경계 케이스 확인)이 파트너 분산과 무관해서
+변형을 만들지 않았다.
+
 ## 실행
 
 ```bash
 k6 run k6/01-smoke.js
 k6 run k6/02-load.js
+k6 run k6/02b-load-multi-partner.js
 k6 run k6/03-stress.js
+k6 run k6/03b-stress-multi-partner.js
 ```
 
 순서대로 실행 권장 — smoke가 실패하면(락 정합성 자체가 깨지면) load/stress
-결과는 의미가 없다.
+결과는 의미가 없다. `02`/`02b`, `03`/`03b`는 같은 시간대에 동시 실행하지 말 것
+(같은 서버·DB 상태를 두고 비교해야 결과가 의미 있다).
+
+**비교하는 법**: `02`와 `02b`(또는 `03`과 `03b`)의 처리량/`http_req_duration`
+p95를 나란히 보면 된다. `02b`/`03b`가 뚜렷하게 더 빠르거나 더 높은 VU까지
+버틴다면, partner 원장 잠금이 실제 병목이라는 근거다 — 그 경우 "같은 거래처에
+매출이 동시다발로 몰리는 게 실무에서 흔한 시나리오인지"부터 다시 따져볼
+필요가 있다. 차이가 거의 없다면 병목은 원장이 아니라 HikariCP 풀/Tomcat
+스레드 같은 다른 공용 자원이라는 뜻이다.
 
 ## 결과 읽는 법
 

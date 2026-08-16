@@ -21,18 +21,28 @@ export function authHeaders(token) {
  * 테스트 전용 거래처/회사정보/카테고리/품목/규격을 새로 만들고 initialStock만큼 채운다.
  * 이름에 타임스탬프+난수를 붙여서 실데이터/다른 실행과 절대 안 겹치게 한다.
  * 반환값을 setup()에서 그대로 리턴하면 모든 VU와 teardown()에 공유된다.
+ *
+ * partnerCount(기본 1)를 1보다 크게 주면 거래처를 그만큼 만들어 partnerIds로 반환한다.
+ * 5단계(원장) 도입 이후 매출 등록은 partner 행에도 UPDATE를 걸기 때문에, 같은
+ * 거래처로 몰리는 시나리오(A, partnerCount=1)와 거래처를 분산하는 시나리오(B,
+ * partnerCount=VU 수)를 비교하면 "원장 잠금이 item_spec 낙관적 락과 별개로
+ * 처리량에 얼마나 영향을 주는지"를 분리해서 볼 수 있다. item_spec/재고는 두
+ * 시나리오에서 동일하게 공유되므로 그 변수는 고정된다.
  */
-export function createFixture(token, initialStock) {
+export function createFixture(token, initialStock, partnerCount = 1) {
   const headers = authHeaders(token);
   const suffix = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
-  const partnerRes = http.post(
-    `${BASE_URL}/api/partners`,
-    JSON.stringify({ name: `k6거래처-${suffix}`, partnerType: 'CUSTOMER' }),
-    headers,
-  );
-  check(partnerRes, { '거래처 생성 성공(201)': (r) => r.status === 201 });
-  const partnerId = partnerRes.json('id');
+  const partnerIds = [];
+  for (let i = 0; i < partnerCount; i++) {
+    const partnerRes = http.post(
+      `${BASE_URL}/api/partners`,
+      JSON.stringify({ name: `k6거래처-${suffix}-${i}`, partnerType: 'CUSTOMER' }),
+      headers,
+    );
+    check(partnerRes, { '거래처 생성 성공(201)': (r) => r.status === 201 });
+    partnerIds.push(partnerRes.json('id'));
+  }
 
   const companyRes = http.post(
     `${BASE_URL}/api/company-info`,
@@ -78,7 +88,7 @@ export function createFixture(token, initialStock) {
   );
   check(adjustRes, { '초기 재고 세팅 성공(200)': (r) => r.status === 200 });
 
-  return { partnerId, companyInfoId, itemId, itemSpecId };
+  return { partnerId: partnerIds[0], partnerIds, companyInfoId, itemId, itemSpecId };
 }
 
 export function fetchCurrentStock(token, itemId, itemSpecId) {
