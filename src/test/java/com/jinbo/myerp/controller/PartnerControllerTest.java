@@ -18,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -94,6 +95,19 @@ class PartnerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void findById_includesLedgerBalances() throws Exception {
+        Partner partner = Partner.builder().id(1L).name("Dongyang Trading").partnerType(PartnerType.CUSTOMER)
+                .active(true).receivableBalance(new BigDecimal("300000.00")).payableBalance(BigDecimal.ZERO).build();
+        given(partnerService.findById(1L)).willReturn(partner);
+
+        mockMvc.perform(get("/api/partners/1")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.receivableBalance").value(300000.00))
+                .andExpect(jsonPath("$.payableBalance").value(0));
     }
 
     @Test

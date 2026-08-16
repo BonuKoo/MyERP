@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -25,4 +26,6 @@ public class Partner {
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private BigDecimal receivableBalance;
+    private BigDecimal payableBalance;
 }

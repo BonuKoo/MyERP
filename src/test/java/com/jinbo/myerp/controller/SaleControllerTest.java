@@ -107,6 +107,19 @@ class SaleControllerTest {
     }
 
     @Test
+    void register_zeroUnitPrice_returns400() throws Exception {
+        String body = """
+                {"partnerId":1,"companyInfoId":1,"saleDate":"2026-08-15","items":[{"itemSpecId":1,"quantity":20,"unitPrice":0}]}
+                """;
+
+        mockMvc.perform(post("/api/sales")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void register_insufficientStock_returns409() throws Exception {
         given(saleService.register(any(Sale.class), anyList(), eq(42L)))
                 .willThrow(new InsufficientStockException(1L, 5, -20));

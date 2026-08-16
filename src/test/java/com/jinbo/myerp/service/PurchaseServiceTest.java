@@ -2,6 +2,7 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.CompanyInfo;
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.PartnerType;
 import com.jinbo.myerp.domain.Purchase;
@@ -61,6 +62,9 @@ class PurchaseServiceTest {
     @Mock
     private StockHistoryMapper stockHistoryMapper;
 
+    @Mock
+    private LedgerService ledgerService;
+
     @InjectMocks
     private PurchaseService purchaseService;
 
@@ -99,6 +103,9 @@ class PurchaseServiceTest {
         assertThat(history.getBeforeStock()).isEqualTo(5);
         assertThat(history.getAfterStock()).isEqualTo(25);
         assertThat(history.getCreatedBy()).isEqualTo(99L);
+
+        verify(ledgerService).recordPayableChange(1L, LedgerChangeType.PURCHASE_CONFIRMED,
+                new BigDecimal("300000"), "PURCHASE", result.getId(), 99L);
     }
 
     @Test
@@ -152,7 +159,8 @@ class PurchaseServiceTest {
 
     @Test
     void cancel_success_reversesStockAndRecordsHistory() {
-        Purchase purchase = Purchase.builder().id(1L).status(PurchaseStatus.CONFIRMED).build();
+        Purchase purchase = Purchase.builder().id(1L).partnerId(1L).status(PurchaseStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("300000")).build();
         given(purchaseMapper.findById(1L)).willReturn(Optional.of(purchase));
         PurchaseItem item = PurchaseItem.builder().id(1L).purchaseId(1L).itemSpecId(10L).quantity(20).build();
         given(purchaseItemMapper.findByPurchaseId(1L)).willReturn(List.of(item));
@@ -172,6 +180,9 @@ class PurchaseServiceTest {
         verify(stockHistoryMapper).insert(captor.capture());
         assertThat(captor.getValue().getChangeType()).isEqualTo(StockChangeType.ADJUST);
         assertThat(captor.getValue().getQuantity()).isEqualTo(-20);
+
+        verify(ledgerService).recordPayableChange(1L, LedgerChangeType.PURCHASE_CANCELED,
+                new BigDecimal("300000").negate(), "PURCHASE", 1L, 99L);
     }
 
     @Test
@@ -184,6 +195,7 @@ class PurchaseServiceTest {
 
         verify(itemSpecMapper, never()).update(any());
         verify(stockHistoryMapper, never()).insert(any());
+        verify(ledgerService, never()).recordPayableChange(any(), any(), any(), any(), any(), any());
     }
 
     @Test

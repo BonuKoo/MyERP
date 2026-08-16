@@ -15,6 +15,8 @@
         <result property="active" column="is_active"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="receivableBalance" column="receivable_balance"/>
+        <result property="payableBalance" column="payable_balance"/>
     </resultMap>
 
     <insert id="insert" parameterType="com.jinbo.myerp.domain.Partner" useGeneratedKeys="true" keyProperty="id">
@@ -23,13 +25,15 @@
     </insert>
 
     <select id="findById" resultMap="partnerResultMap">
-        SELECT id, name, business_number, partner_type, contact_name, contact_phone, address, is_active, created_at, updated_at
+        SELECT id, name, business_number, partner_type, contact_name, contact_phone, address, is_active, created_at, updated_at,
+               receivable_balance, payable_balance
         FROM partner
         WHERE id = #{id}
     </select>
 
     <select id="findAll" resultMap="partnerResultMap">
-        SELECT id, name, business_number, partner_type, contact_name, contact_phone, address, is_active, created_at, updated_at
+        SELECT id, name, business_number, partner_type, contact_name, contact_phone, address, is_active, created_at, updated_at,
+               receivable_balance, payable_balance
         FROM partner
         ORDER BY id DESC
         LIMIT #{size} OFFSET #{offset}
@@ -50,6 +54,18 @@
             is_active = #{active},
             updated_at = #{updatedAt}
         WHERE id = #{id}
+    </update>
+
+    <update id="adjustReceivableBalance">
+        UPDATE partner
+        SET receivable_balance = receivable_balance + #{delta}
+        WHERE id = #{partnerId}
+    </update>
+
+    <update id="adjustPayableBalance">
+        UPDATE partner
+        SET payable_balance = payable_balance + #{delta}
+        WHERE id = #{partnerId}
     </update>
 
 </mapper>

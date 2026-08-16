@@ -1,16 +1,16 @@
 package com.jinbo.myerp.controller;
 
-import com.jinbo.myerp.domain.Purchase;
-import com.jinbo.myerp.domain.PurchaseItem;
-import com.jinbo.myerp.domain.PurchaseStatus;
-import com.jinbo.myerp.exception.InsufficientStockException;
+import com.jinbo.myerp.domain.Payment;
+import com.jinbo.myerp.domain.PaymentStatus;
+import com.jinbo.myerp.domain.PaymentType;
 import com.jinbo.myerp.exception.InvalidStatusTransitionException;
-import com.jinbo.myerp.exception.PurchaseNotFoundException;
+import com.jinbo.myerp.exception.PartnerNotFoundException;
+import com.jinbo.myerp.exception.PaymentNotFoundException;
 import com.jinbo.myerp.security.JwtAuthenticationFilter;
 import com.jinbo.myerp.security.JwtTokenProvider;
 import com.jinbo.myerp.security.SecurityConfig;
 import com.jinbo.myerp.service.PageResult;
-import com.jinbo.myerp.service.PurchaseService;
+import com.jinbo.myerp.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -36,9 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PurchaseController.class)
+@WebMvcTest(PaymentController.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtTokenProvider.class})
-class PurchaseControllerTest {
+class PaymentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,7 +46,7 @@ class PurchaseControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockBean
-    private PurchaseService purchaseService;
+    private PaymentService paymentService;
 
     private String bearerToken;
 
@@ -56,49 +55,48 @@ class PurchaseControllerTest {
         bearerToken = "Bearer " + jwtTokenProvider.createToken(42L, "owner@myerp.com", "OWNER");
     }
 
-    private Purchase samplePurchase() {
-        return Purchase.builder().id(1L).purchaseNo("PO123").partnerId(1L).companyInfoId(1L)
-                .purchaseDate(LocalDate.now()).totalAmount(new BigDecimal("300000"))
-                .status(PurchaseStatus.CONFIRMED).createdBy(42L).build();
+    private Payment samplePayment() {
+        return Payment.builder().id(1L).paymentNo("PM123").partnerId(1L).paymentType(PaymentType.RECEIPT)
+                .amount(new BigDecimal("100000")).paymentDate(LocalDate.now())
+                .status(PaymentStatus.CONFIRMED).createdBy(42L).build();
     }
 
     @Test
     void register_returns201AndUsesAuthenticatedUserAsCreator() throws Exception {
-        given(purchaseService.register(any(Purchase.class), anyList(), eq(42L))).willReturn(samplePurchase());
-        given(purchaseService.findItemsByPurchaseId(1L)).willReturn(List.of());
+        given(paymentService.register(any(Payment.class), eq(42L))).willReturn(samplePayment());
 
         String body = """
-                {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[{"itemSpecId":1,"quantity":20,"unitPrice":15000}]}
+                {"partnerId":1,"paymentType":"RECEIPT","amount":100000,"paymentDate":"2026-08-16","method":"BANK_TRANSFER"}
                 """;
 
-        mockMvc.perform(post("/api/purchases")
+        mockMvc.perform(post("/api/payments")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/purchases/1"))
+                .andExpect(header().string("Location", "/api/payments/1"))
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
     }
 
     @Test
     void register_withoutToken_returns401() throws Exception {
         String body = """
-                {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[{"itemSpecId":1,"quantity":20,"unitPrice":15000}]}
+                {"partnerId":1,"paymentType":"RECEIPT","amount":100000,"paymentDate":"2026-08-16"}
                 """;
 
-        mockMvc.perform(post("/api/purchases")
+        mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void register_emptyItems_returns400() throws Exception {
+    void register_zeroAmount_returns400() throws Exception {
         String body = """
-                {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[]}
+                {"partnerId":1,"paymentType":"RECEIPT","amount":0,"paymentDate":"2026-08-16"}
                 """;
 
-        mockMvc.perform(post("/api/purchases")
+        mockMvc.perform(post("/api/payments")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -106,47 +104,44 @@ class PurchaseControllerTest {
     }
 
     @Test
-    void register_zeroUnitPrice_returns400() throws Exception {
+    void register_partnerNotFound_returns404() throws Exception {
+        given(paymentService.register(any(Payment.class), eq(42L))).willThrow(new PartnerNotFoundException(1L));
+
         String body = """
-                {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[{"itemSpecId":1,"quantity":20,"unitPrice":0}]}
+                {"partnerId":1,"paymentType":"RECEIPT","amount":100000,"paymentDate":"2026-08-16"}
                 """;
 
-        mockMvc.perform(post("/api/purchases")
+        mockMvc.perform(post("/api/payments")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void findById_notFound_returns404() throws Exception {
-        given(purchaseService.findById(anyLong())).willThrow(new PurchaseNotFoundException(99L));
+        given(paymentService.findById(anyLong())).willThrow(new PaymentNotFoundException(99L));
 
-        mockMvc.perform(get("/api/purchases/99")
+        mockMvc.perform(get("/api/payments/99")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void findById_returnsPurchaseWithItems() throws Exception {
-        given(purchaseService.findById(1L)).willReturn(samplePurchase());
-        given(purchaseService.findItemsByPurchaseId(1L)).willReturn(
-                List.of(PurchaseItem.builder().id(1L).itemSpecId(1L).quantity(20)
-                        .unitPrice(new BigDecimal("15000")).amount(new BigDecimal("300000")).build()));
+    void findById_returnsPayment() throws Exception {
+        given(paymentService.findById(1L)).willReturn(samplePayment());
 
-        mockMvc.perform(get("/api/purchases/1")
+        mockMvc.perform(get("/api/payments/1")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.purchaseNo").value("PO123"))
-                .andExpect(jsonPath("$.items[0].quantity").value(20));
+                .andExpect(jsonPath("$.paymentNo").value("PM123"));
     }
 
     @Test
     void findAll_returnsPagedResponse() throws Exception {
-        given(purchaseService.findAll(0, 20)).willReturn(new PageResult<>(List.of(samplePurchase()), 1, 0, 20));
-        given(purchaseService.findItemsByPurchaseId(1L)).willReturn(List.of());
+        given(paymentService.findAll(0, 20)).willReturn(new PageResult<>(List.of(samplePayment()), 1, 0, 20));
 
-        mockMvc.perform(get("/api/purchases")
+        mockMvc.perform(get("/api/payments")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(1));
@@ -154,12 +149,11 @@ class PurchaseControllerTest {
 
     @Test
     void cancel_success_returns200() throws Exception {
-        Purchase canceled = samplePurchase();
-        canceled.setStatus(PurchaseStatus.CANCELED);
-        given(purchaseService.cancel(1L, 42L)).willReturn(canceled);
-        given(purchaseService.findItemsByPurchaseId(1L)).willReturn(List.of());
+        Payment canceled = samplePayment();
+        canceled.setStatus(PaymentStatus.CANCELED);
+        given(paymentService.cancel(1L, 42L)).willReturn(canceled);
 
-        mockMvc.perform(post("/api/purchases/1/cancel")
+        mockMvc.perform(post("/api/payments/1/cancel")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELED"));
@@ -167,20 +161,10 @@ class PurchaseControllerTest {
 
     @Test
     void cancel_alreadyCanceled_returns409() throws Exception {
-        given(purchaseService.cancel(anyLong(), anyLong()))
-                .willThrow(new InvalidStatusTransitionException("이미 취소된 매입 전표입니다"));
+        given(paymentService.cancel(anyLong(), anyLong()))
+                .willThrow(new InvalidStatusTransitionException("이미 취소된 결제 전표입니다"));
 
-        mockMvc.perform(post("/api/purchases/1/cancel")
-                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void cancel_insufficientStock_returns409() throws Exception {
-        given(purchaseService.cancel(anyLong(), anyLong()))
-                .willThrow(new InsufficientStockException(1L, 5, -20));
-
-        mockMvc.perform(post("/api/purchases/1/cancel")
+        mockMvc.perform(post("/api/payments/1/cancel")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isConflict());
     }
