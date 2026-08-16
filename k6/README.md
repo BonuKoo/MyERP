@@ -3,6 +3,10 @@
 `POST /api/sales`(매출 전표 등록)가 같은 규격(item_spec)에 동시에 여러 요청이
 몰려도 오버셀 없이 처리되는지를 실제 HTTP 계층에서 검증한다.
 
+이 문서는 **지금 있는 스크립트의 사용법과 그동안 발견한 것**을 다룬다. 앞으로의
+성능·한계 측정 계획(측정 환경의 한계, SLO, 시나리오 로드맵)은
+[`LOAD_TEST_PLAN.md`](LOAD_TEST_PLAN.md)에 따로 정리했다.
+
 ## 전제
 
 - 로컬 백엔드(`./gradlew bootRun`)와 MySQL(`erp_db`)이 떠 있어야 한다.
@@ -19,7 +23,8 @@
 검증한다.** `SaleController`가 `@Qualifier("optimisticLockSaleService")`로
 고정되어 있어 비관적 락(`PessimisticLockSaleService`)은 REST API로 접근할 방법이
 없다 — 그건 `SaleConcurrencyIntegrationTest`(JUnit, `ExecutorService`)의 몫으로
-남아있다.
+남아있다. 이 제약을 풀고 두 락 전략을 같은 부하로 비교하는 것이
+[`LOAD_TEST_PLAN.md`](LOAD_TEST_PLAN.md)의 A1 항목이다.
 
 서버 설정은 명시적 오버라이드가 없어 Spring Boot 기본값을 그대로 쓴다:
 HikariCP 커넥션 풀 10개, Tomcat 최대 스레드 200개. 아래 세 스크립트의 VU 수는
