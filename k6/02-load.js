@@ -29,7 +29,8 @@ export const options = {
   },
   thresholds: {
     // 재고 소진에 의한 409는 이 테스트에선 거의 안 나올 것으로 예상(재고 넉넉).
-    // 진짜 서버 결함(5xx, 커넥션 실패)만 실패로 간주한다.
+    // 진짜 서버 결함(5xx, 커넥션 실패)과 스크립트 결함(400/404)만 실패로 간주한다.
+    sale_client_error_rate: ['rate==0'],
     sale_server_error_rate: ['rate==0'],
     sale_connection_error_rate: ['rate==0'],
     http_req_duration: ['p(95)<2000'],

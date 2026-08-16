@@ -29,6 +29,7 @@ export const options = {
     },
   },
   thresholds: {
+    sale_client_error_rate: ['rate==0'],
     sale_server_error_rate: ['rate==0'],
     sale_connection_error_rate: ['rate==0'],
   },

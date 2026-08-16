@@ -11,16 +11,27 @@ export const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 // classifyResponse()가 매 응답마다 채운다. 스크립트마다 각자 Counter를 새로
 // 만들던 방식을 걷어내고 여기 한 곳으로 모아서, 02 vs 02b/03 vs 03b 비교 시
 // 지표 이름·의미가 스크립트마다 어긋나지 않게 한다.
+// status===0(연결 실패)은 실제 HTTP 왕복이 없었던 요청이라 duration이 의미가
+// 없다 — classifyResponse()에서 그 경우만 제외하고 기록한다.
 export const saleResponseTime = new Trend('sale_response_time'); // ms, http_req_duration과 별개로 이 도메인 전용 이름을 갖게
 export const saleStatusCodes = new Counter('sale_status_codes'); // {status: "201"} 태그로 상태코드 분포
 export const saleSuccessRate = new Rate('sale_success_rate'); // 201
 export const saleInsufficientStockRate = new Rate('sale_insufficient_stock_rate'); // 409, 재고부족
 export const saleLockConflictRate = new Rate('sale_lock_conflict_rate'); // 409, 낙관적 락 충돌(메시지에 "충돌" 포함)
+// 400(검증 실패)/404(존재하지 않는 리소스) — 서버 결함이 아니라 스크립트가 보낸
+// 요청 자체가 잘못됐다는 신호. 500과 같은 통에 담으면 "서버가 죽었다"와
+// "테스트가 잘못됐다"가 구분이 안 돼서 별도 지표로 뺐다.
+export const saleClientErrorRate = new Rate('sale_client_error_rate');
 export const saleServerErrorRate = new Rate('sale_server_error_rate'); // 5xx — smoke/load/stress 전부 0이어야 정상
 export const saleConnectionErrorRate = new Rate('sale_connection_error_rate'); // status 0(연결 실패/타임아웃)
+// 연결 실패의 세부 원인(타임아웃/연결거부/DNS 등)을 k6의 res.error_code로 구분.
+// stress에서 "느려지다가 타임아웃"인지 "아예 연결을 거부당함"인지는 서로 다른
+// 결론(전자는 큐잉, 후자는 리스너/OS 레벨 한계)으로 이어지므로 뭉치면 안 된다.
+export const saleConnectionErrorCodes = new Counter('sale_connection_error_codes');
 export const saleAuthErrorCount = new Counter('sale_auth_error_count'); // 401/403 — 테스트 자체가 잘못됐다는 신호
-// 5xx/그 외 예상 못한 응답의 원인 메시지별 카운트. 데드락처럼 원인이 뒤섞일 수
-// 있는 500을 하나로 뭉뚱그리지 않고 {message: ...} 태그로 쪼개서 보기 위함.
+// 정상 비즈니스 분기(201/409/0)가 아닌 모든 응답의 원인 메시지별 카운트.
+// 데드락처럼 원인이 뒤섞일 수 있는 500을 하나로 뭉뚱그리지 않고
+// {message, status} 태그로 쪼개서 보기 위함.
 export const saleErrorMessages = new Counter('sale_error_messages');
 
 export function login(email, password) {
@@ -133,23 +144,28 @@ function extractErrorMessage(res) {
  * 매출 등록 응답 하나를 분류하면서 위 지표들을 전부 채운다.
  * Rate 지표는 매 호출마다 true/false를 넘겨야 "전체 요청 대비 비율"이 맞게
  * 계산된다(해당되는 경우에만 add(1)을 부르면 그 지표의 모수가 좁아져서
- * 비율이 왜곡된다) — 그래서 아래 5개 Rate.add()는 매번 전부 호출한다.
+ * 비율이 왜곡된다) — 그래서 Rate.add()는 매번 전부 호출한다.
  */
 export function classifyResponse(res) {
-  saleResponseTime.add(res.timings.duration);
   saleStatusCodes.add(1, { status: String(res.status) });
+
+  const isConnectionError = res.status === 0;
+  if (!isConnectionError) {
+    saleResponseTime.add(res.timings.duration);
+  }
 
   const isSuccess = res.status === 201;
   const isConflict = res.status === 409;
   const isLockConflict = isConflict && typeof res.body === 'string' && res.body.includes('충돌');
   const isInsufficientStock = isConflict && !isLockConflict;
-  const isConnectionError = res.status === 0;
+  const isClientError = res.status === 400 || res.status === 404;
   const isAuthError = res.status === 401 || res.status === 403;
   const isServerError = res.status >= 500;
 
   saleSuccessRate.add(isSuccess);
   saleInsufficientStockRate.add(isInsufficientStock);
   saleLockConflictRate.add(isLockConflict);
+  saleClientErrorRate.add(isClientError);
   saleServerErrorRate.add(isServerError);
   saleConnectionErrorRate.add(isConnectionError);
 
@@ -157,15 +173,21 @@ export function classifyResponse(res) {
     saleAuthErrorCount.add(1, { status: String(res.status) });
   }
 
+  if (isConnectionError) {
+    saleConnectionErrorCodes.add(1, { error_code: String(res.error_code), error: res.error || 'unknown' });
+    return 'connectionError';
+  }
   if (isSuccess) return 'success';
   if (isLockConflict) return 'lockConflict';
   if (isInsufficientStock) return 'insufficientStock';
-  if (isConnectionError) return 'connectionError';
 
-  // 여기 도달하는 건 201/409/0이 아닌 전부(주로 5xx) — 원인 메시지별로 쪼개서 기록.
+  // 여기부터는 정상 비즈니스 분기(201/409/0)가 아닌 전부 — 원인 메시지별로 쪼개서 기록.
   const message = extractErrorMessage(res);
   saleErrorMessages.add(1, { message, status: String(res.status) });
   console.error(`예상 못한 응답: status=${res.status} body=${res.body}`);
+
+  if (isClientError) return 'clientError';
+  if (isAuthError) return 'authError';
   return 'unexpectedError';
 }
 
