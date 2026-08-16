@@ -19,7 +19,9 @@ CREATE TABLE partner (
     address             VARCHAR(255),
     is_active           BOOLEAN NOT NULL DEFAULT TRUE,
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    receivable_balance  DECIMAL(14,2) NOT NULL DEFAULT 0,
+    payable_balance     DECIMAL(14,2) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE company_info (
@@ -142,4 +144,32 @@ CREATE TABLE sale_item (
     quantity        INT NOT NULL,
     unit_price      DECIMAL(12,2) NOT NULL,
     amount          DECIMAL(14,2) NOT NULL
+);
+
+CREATE TABLE ledger_entry (
+    id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    partner_id              BIGINT NOT NULL,
+    ledger_type             VARCHAR(20) NOT NULL,
+    change_type             VARCHAR(30) NOT NULL,
+    amount                  DECIMAL(14,2) NOT NULL,
+    balance_after           DECIMAL(14,2) NOT NULL,
+    related_document_type   VARCHAR(20),
+    related_document_id     BIGINT,
+    created_by              BIGINT NOT NULL,
+    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE payment (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    payment_no      VARCHAR(30) NOT NULL UNIQUE,
+    partner_id      BIGINT NOT NULL,
+    payment_type    VARCHAR(20) NOT NULL,
+    amount          DECIMAL(14,2) NOT NULL,
+    payment_date    DATE NOT NULL,
+    method          VARCHAR(20),
+    memo            VARCHAR(255),
+    status          VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
+    created_by      BIGINT NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    canceled_at     DATETIME
 );

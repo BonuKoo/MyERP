@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -67,5 +68,29 @@ class PartnerMapperTest {
         Partner updated = partnerMapper.findById(partner.getId()).orElseThrow();
         assertThat(updated.getName()).isEqualTo("변경후");
         assertThat(updated.isActive()).isFalse();
+    }
+
+    @Test
+    void adjustReceivableBalance_accumulatesAtomically() {
+        Partner partner = newPartner("외상거래처");
+        partnerMapper.insert(partner);
+
+        partnerMapper.adjustReceivableBalance(partner.getId(), new BigDecimal("300000.00"));
+        partnerMapper.adjustReceivableBalance(partner.getId(), new BigDecimal("-100000.00"));
+
+        Partner updated = partnerMapper.findById(partner.getId()).orElseThrow();
+        assertThat(updated.getReceivableBalance()).isEqualByComparingTo("200000.00");
+    }
+
+    @Test
+    void adjustPayableBalance_accumulatesAtomically() {
+        Partner partner = newPartner("매입거래처");
+        partnerMapper.insert(partner);
+
+        partnerMapper.adjustPayableBalance(partner.getId(), new BigDecimal("500000.00"));
+        partnerMapper.adjustPayableBalance(partner.getId(), new BigDecimal("-200000.00"));
+
+        Partner updated = partnerMapper.findById(partner.getId()).orElseThrow();
+        assertThat(updated.getPayableBalance()).isEqualByComparingTo("300000.00");
     }
 }

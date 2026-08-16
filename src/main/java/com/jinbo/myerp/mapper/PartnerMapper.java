@@ -4,6 +4,7 @@ import com.jinbo.myerp.domain.Partner;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +20,8 @@ public interface PartnerMapper {
     int countAll();
 
     void update(Partner partner);
+
+    void adjustReceivableBalance(@Param("partnerId") Long partnerId, @Param("delta") BigDecimal delta);
+
+    void adjustPayableBalance(@Param("partnerId") Long partnerId, @Param("delta") BigDecimal delta);
 }
