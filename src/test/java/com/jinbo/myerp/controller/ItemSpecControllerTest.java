@@ -63,6 +63,19 @@ class ItemSpecControllerTest {
     }
 
     @Test
+    void update_zeroCostPrice_returns400() throws Exception {
+        String body = """
+                {"specName":"20kg","unit":"BOX","costPrice":0,"salePrice":21000,"safetyStock":15}
+                """;
+
+        mockMvc.perform(put("/api/item-specs/1")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void update_notFound_returns404() throws Exception {
         given(itemSpecService.update(any(Long.class), any(ItemSpec.class))).willThrow(new ItemSpecNotFoundException(99L));
 
