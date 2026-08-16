@@ -1,6 +1,7 @@
 package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Payment;
 import com.jinbo.myerp.domain.PaymentStatus;
 import com.jinbo.myerp.domain.PaymentType;
@@ -29,19 +30,33 @@ public class PaymentService {
         partnerMapper.findById(payment.getPartnerId())
                 .orElseThrow(() -> new PartnerNotFoundException(payment.getPartnerId()));
 
+        BigDecimal amount = payment.getAmount().negate();
+        LedgerChangeType changeType = payment.getPaymentType() == PaymentType.RECEIPT
+                ? LedgerChangeType.PAYMENT_RECEIVED
+                : LedgerChangeType.PAYMENT_PAID;
+
+        // partner 잔액 조정을 payment insert보다 먼저 실행해 partner 행의 배타락을 선점해야
+        // 한다. 자세한 이유는 OptimisticLockSaleService.register()의 동일 주석 참고.
+        BigDecimal balanceAfter = adjustLedgerBalance(payment, amount);
+
         payment.setPaymentNo("PM" + System.currentTimeMillis());
         payment.setStatus(PaymentStatus.CONFIRMED);
         payment.setCreatedBy(userId);
         payment.setCreatedAt(LocalDateTime.now());
         paymentMapper.insert(payment);
 
-        recordLedger(payment, payment.getAmount().negate(),
-                payment.getPaymentType() == PaymentType.RECEIPT
-                        ? LedgerChangeType.PAYMENT_RECEIVED
-                        : LedgerChangeType.PAYMENT_PAID,
-                userId);
+        LedgerType ledgerType = payment.getPaymentType() == PaymentType.RECEIPT ? LedgerType.RECEIVABLE : LedgerType.PAYABLE;
+        ledgerService.recordEntry(payment.getPartnerId(), ledgerType, changeType, amount, balanceAfter,
+                "PAYMENT", payment.getId(), userId);
 
         return payment;
+    }
+
+    private BigDecimal adjustLedgerBalance(Payment payment, BigDecimal amount) {
+        if (payment.getPaymentType() == PaymentType.RECEIPT) {
+            return ledgerService.adjustReceivableBalance(payment.getPartnerId(), amount);
+        }
+        return ledgerService.adjustPayableBalance(payment.getPartnerId(), amount);
     }
 
     public Payment findById(Long id) {

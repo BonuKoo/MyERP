@@ -3,6 +3,7 @@ package com.jinbo.myerp.service;
 import com.jinbo.myerp.domain.CompanyInfo;
 import com.jinbo.myerp.domain.ItemSpec;
 import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.PartnerType;
 import com.jinbo.myerp.domain.Sale;
@@ -25,6 +26,7 @@ import com.jinbo.myerp.mapper.StockHistoryMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -38,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -79,6 +82,7 @@ class PessimisticLockSaleServiceTest {
         given(companyInfoMapper.findById(1L)).willReturn(Optional.of(CompanyInfo.builder().id(1L).build()));
         ItemSpec spec = ItemSpec.builder().id(10L).currentStock(50).version(0).build();
         given(itemSpecMapper.findByIdForUpdate(10L)).willReturn(Optional.of(spec));
+        given(ledgerService.adjustReceivableBalance(1L, new BigDecimal("400000"))).willReturn(new BigDecimal("900000"));
 
         SaleItem itemRequest = SaleItem.builder().itemSpecId(10L).quantity(20).unitPrice(new BigDecimal("20000")).build();
 
@@ -104,8 +108,12 @@ class PessimisticLockSaleServiceTest {
         assertThat(history.getAfterStock()).isEqualTo(30);
         assertThat(history.getCreatedBy()).isEqualTo(99L);
 
-        verify(ledgerService).recordReceivableChange(1L, LedgerChangeType.SALE_CONFIRMED,
-                new BigDecimal("400000"), "SALE", result.getId(), 99L);
+        InOrder inOrder = inOrder(ledgerService, saleMapper);
+        inOrder.verify(ledgerService).adjustReceivableBalance(1L, new BigDecimal("400000"));
+        inOrder.verify(saleMapper).insert(result);
+
+        verify(ledgerService).recordEntry(1L, LedgerType.RECEIVABLE, LedgerChangeType.SALE_CONFIRMED,
+                new BigDecimal("400000"), new BigDecimal("900000"), "SALE", result.getId(), 99L);
     }
 
     @Test

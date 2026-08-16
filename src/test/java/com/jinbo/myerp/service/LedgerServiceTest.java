@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +74,46 @@ class LedgerServiceTest {
         assertThat(entry.getLedgerType()).isEqualTo(LedgerType.PAYABLE);
         assertThat(entry.getChangeType()).isEqualTo(LedgerChangeType.PURCHASE_CONFIRMED);
         assertThat(entry.getBalanceAfter()).isEqualByComparingTo("150000.00");
+    }
+
+    @Test
+    void adjustReceivableBalance_returnsNewBalanceWithoutInsertingEntry() {
+        given(partnerMapper.findById(1L)).willReturn(
+                Optional.of(Partner.builder().id(1L).receivableBalance(new BigDecimal("300000.00")).build()));
+
+        BigDecimal balanceAfter = ledgerService.adjustReceivableBalance(1L, new BigDecimal("300000.00"));
+
+        verify(partnerMapper).adjustReceivableBalance(1L, new BigDecimal("300000.00"));
+        assertThat(balanceAfter).isEqualByComparingTo("300000.00");
+        verify(ledgerEntryMapper, never()).insert(any());
+    }
+
+    @Test
+    void adjustPayableBalance_returnsNewBalanceWithoutInsertingEntry() {
+        given(partnerMapper.findById(2L)).willReturn(
+                Optional.of(Partner.builder().id(2L).payableBalance(new BigDecimal("150000.00")).build()));
+
+        BigDecimal balanceAfter = ledgerService.adjustPayableBalance(2L, new BigDecimal("150000.00"));
+
+        verify(partnerMapper).adjustPayableBalance(2L, new BigDecimal("150000.00"));
+        assertThat(balanceAfter).isEqualByComparingTo("150000.00");
+        verify(ledgerEntryMapper, never()).insert(any());
+    }
+
+    @Test
+    void recordEntry_insertsEntryWithoutAdjustingBalance() {
+        ledgerService.recordEntry(1L, LedgerType.RECEIVABLE, LedgerChangeType.SALE_CONFIRMED,
+                new BigDecimal("300000.00"), new BigDecimal("300000.00"), "SALE", 5L, 99L);
+
+        verify(partnerMapper, never()).adjustReceivableBalance(any(), any());
+        verify(partnerMapper, never()).adjustPayableBalance(any(), any());
+
+        ArgumentCaptor<LedgerEntry> captor = ArgumentCaptor.forClass(LedgerEntry.class);
+        verify(ledgerEntryMapper).insert(captor.capture());
+        LedgerEntry entry = captor.getValue();
+        assertThat(entry.getPartnerId()).isEqualTo(1L);
+        assertThat(entry.getLedgerType()).isEqualTo(LedgerType.RECEIVABLE);
+        assertThat(entry.getRelatedDocumentId()).isEqualTo(5L);
     }
 
     @Test

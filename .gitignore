@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### k6 ###
+k6/reports/*
+!k6/reports/.gitkeep
