@@ -80,6 +80,19 @@ class StockControllerTest {
     }
 
     @Test
+    void adjust_zeroDelta_returns400() throws Exception {
+        String body = """
+                {"quantityDelta":0}
+                """;
+
+        mockMvc.perform(post("/api/item-specs/1/stock/adjust")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void adjust_insufficientStock_returns409() throws Exception {
         given(stockService.adjustStock(anyLong(), anyInt(), anyLong()))
                 .willThrow(new InsufficientStockException(1L, 5, -10));
