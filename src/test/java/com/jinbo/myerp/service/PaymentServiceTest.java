@@ -1,6 +1,7 @@
 package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.Payment;
 import com.jinbo.myerp.domain.PaymentStatus;
@@ -12,6 +13,7 @@ import com.jinbo.myerp.mapper.PartnerMapper;
 import com.jinbo.myerp.mapper.PaymentMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,24 +58,37 @@ class PaymentServiceTest {
     @Test
     void register_receipt_decreasesReceivableBalance() {
         given(partnerMapper.findById(1L)).willReturn(Optional.of(Partner.builder().id(1L).build()));
+        given(ledgerService.adjustReceivableBalance(1L, new BigDecimal("100000.00").negate()))
+                .willReturn(new BigDecimal("200000.00"));
 
         Payment result = paymentService.register(newPaymentRequest(PaymentType.RECEIPT), 99L);
 
         assertThat(result.getStatus()).isEqualTo(PaymentStatus.CONFIRMED);
         assertThat(result.getPaymentNo()).isNotBlank();
         verify(paymentMapper).insert(result);
-        verify(ledgerService).recordReceivableChange(1L, LedgerChangeType.PAYMENT_RECEIVED,
-                new BigDecimal("100000.00").negate(), "PAYMENT", result.getId(), 99L);
+
+        InOrder inOrder = inOrder(ledgerService, paymentMapper);
+        inOrder.verify(ledgerService).adjustReceivableBalance(1L, new BigDecimal("100000.00").negate());
+        inOrder.verify(paymentMapper).insert(result);
+
+        verify(ledgerService).recordEntry(1L, LedgerType.RECEIVABLE, LedgerChangeType.PAYMENT_RECEIVED,
+                new BigDecimal("100000.00").negate(), new BigDecimal("200000.00"), "PAYMENT", result.getId(), 99L);
     }
 
     @Test
     void register_disbursement_decreasesPayableBalance() {
         given(partnerMapper.findById(1L)).willReturn(Optional.of(Partner.builder().id(1L).build()));
+        given(ledgerService.adjustPayableBalance(1L, new BigDecimal("100000.00").negate()))
+                .willReturn(new BigDecimal("50000.00"));
 
         Payment result = paymentService.register(newPaymentRequest(PaymentType.DISBURSEMENT), 99L);
 
-        verify(ledgerService).recordPayableChange(1L, LedgerChangeType.PAYMENT_PAID,
-                new BigDecimal("100000.00").negate(), "PAYMENT", result.getId(), 99L);
+        InOrder inOrder = inOrder(ledgerService, paymentMapper);
+        inOrder.verify(ledgerService).adjustPayableBalance(1L, new BigDecimal("100000.00").negate());
+        inOrder.verify(paymentMapper).insert(result);
+
+        verify(ledgerService).recordEntry(1L, LedgerType.PAYABLE, LedgerChangeType.PAYMENT_PAID,
+                new BigDecimal("100000.00").negate(), new BigDecimal("50000.00"), "PAYMENT", result.getId(), 99L);
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.ItemSpec;
 import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Sale;
 import com.jinbo.myerp.domain.SaleItem;
 import com.jinbo.myerp.domain.SaleStatus;
@@ -64,6 +65,10 @@ public class PessimisticLockSaleService implements SaleService {
             totalAmount = totalAmount.add(item.getAmount());
         }
 
+        // partner 잔액 조정을 sale insert보다 먼저 실행해 partner 행의 배타락을 선점해야 한다.
+        // 자세한 이유는 OptimisticLockSaleService.register()의 동일 주석 참고.
+        BigDecimal balanceAfter = ledgerService.adjustReceivableBalance(sale.getPartnerId(), totalAmount);
+
         sale.setSaleNo("SO" + System.currentTimeMillis() + "-" + SALE_NO_SEQUENCE.incrementAndGet());
         sale.setStatus(SaleStatus.CONFIRMED);
         sale.setTotalAmount(totalAmount);
@@ -78,8 +83,8 @@ public class PessimisticLockSaleService implements SaleService {
             decreaseStock(specs.get(i), item.getQuantity(), sale.getId(), userId);
         }
 
-        ledgerService.recordReceivableChange(sale.getPartnerId(), LedgerChangeType.SALE_CONFIRMED,
-                totalAmount, "SALE", sale.getId(), userId);
+        ledgerService.recordEntry(sale.getPartnerId(), LedgerType.RECEIVABLE, LedgerChangeType.SALE_CONFIRMED,
+                totalAmount, balanceAfter, "SALE", sale.getId(), userId);
 
         return sale;
     }

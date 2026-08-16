@@ -2,6 +2,7 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.ItemSpec;
 import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Purchase;
 import com.jinbo.myerp.domain.PurchaseItem;
 import com.jinbo.myerp.domain.PurchaseStatus;
@@ -57,6 +58,10 @@ public class PurchaseService {
             totalAmount = totalAmount.add(item.getAmount());
         }
 
+        // partner 잔액 조정을 purchase insert보다 먼저 실행해 partner 행의 배타락을 선점해야
+        // 한다. 자세한 이유는 OptimisticLockSaleService.register()의 동일 주석 참고.
+        BigDecimal balanceAfter = ledgerService.adjustPayableBalance(purchase.getPartnerId(), totalAmount);
+
         purchase.setPurchaseNo("PO" + System.currentTimeMillis());
         purchase.setStatus(PurchaseStatus.CONFIRMED);
         purchase.setTotalAmount(totalAmount);
@@ -71,8 +76,8 @@ public class PurchaseService {
             increaseStock(specs.get(i), item.getQuantity(), purchase.getId(), userId);
         }
 
-        ledgerService.recordPayableChange(purchase.getPartnerId(), LedgerChangeType.PURCHASE_CONFIRMED,
-                totalAmount, "PURCHASE", purchase.getId(), userId);
+        ledgerService.recordEntry(purchase.getPartnerId(), LedgerType.PAYABLE, LedgerChangeType.PURCHASE_CONFIRMED,
+                totalAmount, balanceAfter, "PURCHASE", purchase.getId(), userId);
 
         return purchase;
     }
