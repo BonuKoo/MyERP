@@ -107,6 +107,56 @@ p95를 나란히 보면 된다. `02b`/`03b`가 뚜렷하게 더 빠르거나 더
   (`최종 재고는 절대 음수가 될 수 없음`)가 실패하면, 그건 곧바로 락에 실제
   버그가 있다는 뜻이므로 다른 무엇보다 먼저 봐야 한다.
 
+## 발견된 버그: 매출/매입/결제 등록 시 partner 행 데드락 (2026-08-16, 미수정)
+
+`01-smoke.js`를 처음 돌렸을 때 원래 기대(1명 성공 + 2명 409-재고부족)와 다르게
+2명이 500으로 실패했다. `sale_server_error_rate`가 66% 근처로 튀었고, 서버
+로그엔 `Deadlock found when trying to get lock; try restarting transaction`.
+`SHOW ENGINE INNODB STATUS`로 MySQL이 실제로 감지한 락 대기 그래프를 직접
+확인해서 원인을 확정했다 — 추측이 아니라 실측이다.
+
+**쉬운 설명**: 직원 A(트랜잭션1)가 매출 전표를 등록하면서, 먼저 "이 거래처
+정보를 참조한다"는 표시(공유 잠금)를 거래처 파일에 붙인다. 그다음 재고 창고
+열쇠(item_spec)를 가지러 가는데, 그 열쇠는 이미 직원 B(트랜잭션2)가 들고 있다
+— A는 B를 기다린다. 직원 B는 재고 창고 열쇠를 먼저 들고 자기 일을 마친 뒤,
+이제 원장에 반영하려고 거래처 파일을 통째로 꺼내려는데(배타 잠금), 그 파일엔
+이미 A가 붙여놓은 "참조 중" 표시가 남아있어서 통째로 못 꺼낸다 — B는 A를
+기다린다. 서로가 상대방을 기다리며 아무도 못 움직이는 상태(교착)가 되고,
+MySQL이 둘 중 하나(여기선 A)를 강제로 실패시켜서 풀어준다.
+
+**코드 레벨 원인**: `OptimisticLockSaleService.register()`의 실행 순서가
+
+```
+1. saleMapper.insert(sale)                    ← sale.partner_id가 partner를 FK로
+                                                  참조 → partner에 공유 잠금 자동 획득
+2. 재고 차감 루프(item_spec에 배타 잠금)
+3. ledgerService.recordReceivableChange(...)  ← partner에 배타 잠금 필요
+```
+로 되어 있어서, **공유 잠금을 쥔 채로 나중에 같은 행에 배타 잠금 승격을
+요청하는** 구조가 됐다. 4단계 때 `sale_item`/`item_spec` 사이에서 이미 한 번
+겪고 고쳤던 것과 정확히 같은 종류의 문제(자식 INSERT의 FK 공유 잠금이 부모의
+배타 잠금 요청과 순서가 꼬임)가, 이번엔 `sale`/`partner` 사이에서 재발한 것이다.
+
+**영향 범위**: 같은 순서 결함이 register 계열 4곳 전부에 있다(`cancel` 계열은
+새 자식 행을 안 만들어서 이 문제와 무관):
+- `OptimisticLockSaleService.register()`
+- `PessimisticLockSaleService.register()`
+- `PurchaseService.register()`
+- `PaymentService.register()`
+
+**재현 방법**: `k6 run k6/01-smoke.js` 또는
+`./gradlew integrationTest`(`SaleConcurrencyIntegrationTest.optimisticLock_concurrentSales_neverOversellEvenUnderConflictRetries`)
+— 둘 다 100% 재현됨.
+
+**수정 방침(미착수)**: partner 잔액 조정을 자식 행 INSERT보다 먼저 실행해서
+배타 잠금을 선점하도록 순서를 바꾼다. `LedgerService`를 "잔액만 조정"(이른
+시점, 전표 ID 필요 없음)과 "이력 기록"(전표 ID가 나온 뒤)으로 쪼개야 한다.
+
+**별개로 발견한 문제(데드락과 무관)**: `pessimisticLock_concurrentSales_neverOversell`
+테스트의 `cleanUp()`이 `partner`를 지우려다 `ledger_entry`의 FK 제약에 걸려
+실패한다 — 5단계로 테이블이 하나 늘었는데 테스트 정리 순서가 그걸 반영 못 한
+것뿐이다. `ledger_entry`를 `partner`보다 먼저 지우도록 고치면 된다(미착수).
+
 ## HTML 리포트
 
 각 스크립트는 실행이 끝나면 터미널 요약(기존과 동일)에 더해 `k6/reports/`
