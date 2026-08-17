@@ -8,6 +8,11 @@ spring:
     username: erp_user
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 기본값(10)을 그대로 두되 환경변수로 열어둔다 — 풀 크기를 바꿔가며 처리량
+      # 곡선을 재는 A2 스윕(k6/LOAD_TEST_PLAN.md)에 필요하다. 값이 실제로 반영됐는지는
+      # actuator의 hikaricp.connections.max로 확인할 수 있다(오타 나면 조용히 무시되므로).
+      maximum-pool-size: ${DB_POOL_SIZE:10}
 
 server:
   tomcat:
