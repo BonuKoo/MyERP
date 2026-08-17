@@ -2,6 +2,8 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.CompanyInfo;
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.PartnerType;
 import com.jinbo.myerp.domain.Sale;
@@ -25,6 +27,7 @@ import com.jinbo.myerp.mapper.StockHistoryMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -66,6 +70,9 @@ class OptimisticLockSaleServiceTest {
     @Mock
     private StockHistoryMapper stockHistoryMapper;
 
+    @Mock
+    private LedgerService ledgerService;
+
     @InjectMocks
     private OptimisticLockSaleService saleService;
 
@@ -81,6 +88,7 @@ class OptimisticLockSaleServiceTest {
         ItemSpec spec = ItemSpec.builder().id(10L).currentStock(50).version(0).build();
         given(itemSpecMapper.findById(10L)).willReturn(Optional.of(spec));
         given(itemSpecMapper.updateStockOptimistic(eq(10L), eq(30), eq(0), any())).willReturn(1);
+        given(ledgerService.adjustReceivableBalance(1L, new BigDecimal("400000"))).willReturn(new BigDecimal("900000"));
 
         SaleItem itemRequest = SaleItem.builder().itemSpecId(10L).quantity(20).unitPrice(new BigDecimal("20000")).build();
 
@@ -102,6 +110,16 @@ class OptimisticLockSaleServiceTest {
         assertThat(history.getBeforeStock()).isEqualTo(50);
         assertThat(history.getAfterStock()).isEqualTo(30);
         assertThat(history.getCreatedBy()).isEqualTo(99L);
+
+        // partner 잔액 조정이 sale insert보다 먼저 일어나야 한다 — sale.partner_id가
+        // partner를 FK로 참조하므로, 순서가 바뀌면 sale insert가 먼저 잡는 공유 잠금 위에
+        // 잔액 조정이 배타 잠금 승격을 요청하다가 동시 트랜잭션끼리 데드락이 난다.
+        InOrder inOrder = inOrder(ledgerService, saleMapper);
+        inOrder.verify(ledgerService).adjustReceivableBalance(1L, new BigDecimal("400000"));
+        inOrder.verify(saleMapper).insert(result);
+
+        verify(ledgerService).recordEntry(1L, LedgerType.RECEIVABLE, LedgerChangeType.SALE_CONFIRMED,
+                new BigDecimal("400000"), new BigDecimal("900000"), "SALE", result.getId(), 99L);
     }
 
     @Test
@@ -211,7 +229,8 @@ class OptimisticLockSaleServiceTest {
 
     @Test
     void cancel_success_reversesStockAndRecordsHistory() {
-        Sale sale = Sale.builder().id(1L).status(SaleStatus.CONFIRMED).build();
+        Sale sale = Sale.builder().id(1L).partnerId(1L).status(SaleStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("400000")).build();
         given(saleMapper.findById(1L)).willReturn(Optional.of(sale));
         SaleItem item = SaleItem.builder().id(1L).saleId(1L).itemSpecId(10L).quantity(20).build();
         given(saleItemMapper.findBySaleId(1L)).willReturn(List.of(item));
@@ -231,6 +250,9 @@ class OptimisticLockSaleServiceTest {
         assertThat(captor.getValue().getQuantity()).isEqualTo(20);
         assertThat(captor.getValue().getBeforeStock()).isEqualTo(30);
         assertThat(captor.getValue().getAfterStock()).isEqualTo(50);
+
+        verify(ledgerService).recordReceivableChange(1L, LedgerChangeType.SALE_CANCELED,
+                new BigDecimal("400000").negate(), "SALE", 1L, 99L);
     }
 
     @Test
@@ -243,5 +265,6 @@ class OptimisticLockSaleServiceTest {
 
         verify(itemSpecMapper, never()).updateStockOptimistic(any(), anyInt(), anyInt(), any());
         verify(stockHistoryMapper, never()).insert(any());
+        verify(ledgerService, never()).recordReceivableChange(any(), any(), any(), any(), any(), any());
     }
 }

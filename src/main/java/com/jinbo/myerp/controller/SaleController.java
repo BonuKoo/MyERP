@@ -15,8 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
+
 @Tag(name = "매출 전표", description = "매출 등록 시 규격별 재고가 자동 감소하고, 취소 시 자동으로 복원된다. " +
         "동시 요청에 대비해 재고 차감은 낙관적 락(버전 기반, 최대 3회 재시도)으로 처리한다.")
 @SecurityRequirement(name = "bearerAuth")
@@ -36,7 +36,10 @@ public class SaleController {
 
     private final SaleService saleService;
 
-    public SaleController(@Qualifier("optimisticLockSaleService") SaleService saleService) {
+    // 어느 락 전략을 쓸지는 SaleLockStrategyConfig가 myerp.sale.lock-strategy 설정으로
+    // 정한다(기본: 낙관적 락). 여기서 특정 구현으로 고정하면 두 전략을 같은 부하로
+    // 비교할 수 없다 — k6/LOAD_TEST_PLAN.md A1 참고.
+    public SaleController(SaleService saleService) {
         this.saleService = saleService;
     }
 
@@ -60,7 +63,7 @@ public class SaleController {
                 request.toDomain(),
                 request.items().stream().map(SaleItemRequest::toDomain).toList(),
                 currentUserId);
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.created(URI.create("/api/sales/" + saved.getId()))
                 .body(SaleResponse.from(saved, saleService.findItemsBySaleId(saved.getId())));
     }
 

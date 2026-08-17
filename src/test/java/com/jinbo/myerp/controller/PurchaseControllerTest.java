@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,6 +76,7 @@ class PurchaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/purchases/1"))
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
     }
 
@@ -94,6 +96,19 @@ class PurchaseControllerTest {
     void register_emptyItems_returns400() throws Exception {
         String body = """
                 {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[]}
+                """;
+
+        mockMvc.perform(post("/api/purchases")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_zeroUnitPrice_returns400() throws Exception {
+        String body = """
+                {"partnerId":1,"companyInfoId":1,"purchaseDate":"2026-08-15","items":[{"itemSpecId":1,"quantity":20,"unitPrice":0}]}
                 """;
 
         mockMvc.perform(post("/api/purchases")

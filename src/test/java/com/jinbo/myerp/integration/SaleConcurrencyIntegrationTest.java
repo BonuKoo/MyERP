@@ -135,6 +135,9 @@ class SaleConcurrencyIntegrationTest {
         if (categoryMainId != null) {
             jdbcTemplate.update("DELETE FROM category_main WHERE id = ?", categoryMainId);
         }
+        // 5단계(원장) 도입으로 ledger_entry.partner_id가 partner를 FK로 참조하게 됨 —
+        // partner를 지우기 전에 먼저 지워야 한다(안 그러면 FK 제약 위반으로 실패).
+        jdbcTemplate.update("DELETE FROM ledger_entry WHERE partner_id = ?", partnerId);
         jdbcTemplate.update("DELETE FROM partner WHERE id = ?", partnerId);
         jdbcTemplate.update("DELETE FROM company_info WHERE id = ?", companyInfoId);
         jdbcTemplate.update("DELETE FROM company_user WHERE id = ?", userId);

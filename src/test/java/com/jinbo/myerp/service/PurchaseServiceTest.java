@@ -2,6 +2,8 @@ package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.CompanyInfo;
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Partner;
 import com.jinbo.myerp.domain.PartnerType;
 import com.jinbo.myerp.domain.Purchase;
@@ -24,6 +26,7 @@ import com.jinbo.myerp.mapper.StockHistoryMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -61,6 +65,9 @@ class PurchaseServiceTest {
     @Mock
     private StockHistoryMapper stockHistoryMapper;
 
+    @Mock
+    private LedgerService ledgerService;
+
     @InjectMocks
     private PurchaseService purchaseService;
 
@@ -75,6 +82,7 @@ class PurchaseServiceTest {
         given(companyInfoMapper.findById(1L)).willReturn(Optional.of(CompanyInfo.builder().id(1L).build()));
         ItemSpec spec = ItemSpec.builder().id(10L).currentStock(5).version(0).build();
         given(itemSpecMapper.findById(10L)).willReturn(Optional.of(spec));
+        given(ledgerService.adjustPayableBalance(1L, new BigDecimal("300000"))).willReturn(new BigDecimal("700000"));
 
         PurchaseItem itemRequest = PurchaseItem.builder().itemSpecId(10L).quantity(20).unitPrice(new BigDecimal("15000")).build();
 
@@ -99,6 +107,13 @@ class PurchaseServiceTest {
         assertThat(history.getBeforeStock()).isEqualTo(5);
         assertThat(history.getAfterStock()).isEqualTo(25);
         assertThat(history.getCreatedBy()).isEqualTo(99L);
+
+        InOrder inOrder = inOrder(ledgerService, purchaseMapper);
+        inOrder.verify(ledgerService).adjustPayableBalance(1L, new BigDecimal("300000"));
+        inOrder.verify(purchaseMapper).insert(result);
+
+        verify(ledgerService).recordEntry(1L, LedgerType.PAYABLE, LedgerChangeType.PURCHASE_CONFIRMED,
+                new BigDecimal("300000"), new BigDecimal("700000"), "PURCHASE", result.getId(), 99L);
     }
 
     @Test
@@ -152,7 +167,8 @@ class PurchaseServiceTest {
 
     @Test
     void cancel_success_reversesStockAndRecordsHistory() {
-        Purchase purchase = Purchase.builder().id(1L).status(PurchaseStatus.CONFIRMED).build();
+        Purchase purchase = Purchase.builder().id(1L).partnerId(1L).status(PurchaseStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("300000")).build();
         given(purchaseMapper.findById(1L)).willReturn(Optional.of(purchase));
         PurchaseItem item = PurchaseItem.builder().id(1L).purchaseId(1L).itemSpecId(10L).quantity(20).build();
         given(purchaseItemMapper.findByPurchaseId(1L)).willReturn(List.of(item));
@@ -172,6 +188,9 @@ class PurchaseServiceTest {
         verify(stockHistoryMapper).insert(captor.capture());
         assertThat(captor.getValue().getChangeType()).isEqualTo(StockChangeType.ADJUST);
         assertThat(captor.getValue().getQuantity()).isEqualTo(-20);
+
+        verify(ledgerService).recordPayableChange(1L, LedgerChangeType.PURCHASE_CANCELED,
+                new BigDecimal("300000").negate(), "PURCHASE", 1L, 99L);
     }
 
     @Test
@@ -184,6 +203,7 @@ class PurchaseServiceTest {
 
         verify(itemSpecMapper, never()).update(any());
         verify(stockHistoryMapper, never()).insert(any());
+        verify(ledgerService, never()).recordPayableChange(any(), any(), any(), any(), any(), any());
     }
 
     @Test

@@ -1,6 +1,8 @@
 package com.jinbo.myerp.service;
 
 import com.jinbo.myerp.domain.ItemSpec;
+import com.jinbo.myerp.domain.LedgerChangeType;
+import com.jinbo.myerp.domain.LedgerType;
 import com.jinbo.myerp.domain.Sale;
 import com.jinbo.myerp.domain.SaleItem;
 import com.jinbo.myerp.domain.SaleStatus;
@@ -41,6 +43,7 @@ public class OptimisticLockSaleService implements SaleService {
     private final CompanyInfoMapper companyInfoMapper;
     private final ItemSpecMapper itemSpecMapper;
     private final StockHistoryMapper stockHistoryMapper;
+    private final LedgerService ledgerService;
 
     @Override
     @Transactional
@@ -61,6 +64,12 @@ public class OptimisticLockSaleService implements SaleService {
             totalAmount = totalAmount.add(item.getAmount());
         }
 
+        // partner 잔액 조정을 sale insert보다 먼저 실행해 partner 행의 배타락을 선점해야 한다.
+        // 순서가 바뀌면(sale insert 먼저) sale.partner_id의 FK 체크가 잡는 공유락 → 이후
+        // 잔액 조정의 배타락 승격 요청이 동시 트랜잭션끼리 서로를 기다리는 데드락을 유발한다
+        // (sale_item/item_spec 사이에서 겪은 것과 같은 종류의 문제).
+        BigDecimal balanceAfter = ledgerService.adjustReceivableBalance(sale.getPartnerId(), totalAmount);
+
         sale.setSaleNo("SO" + System.currentTimeMillis() + "-" + SALE_NO_SEQUENCE.incrementAndGet());
         sale.setStatus(SaleStatus.CONFIRMED);
         sale.setTotalAmount(totalAmount);
@@ -76,6 +85,9 @@ public class OptimisticLockSaleService implements SaleService {
             applyStockChange(item.getItemSpecId(), -item.getQuantity(), StockChangeType.SALE_OUT, sale.getId(), userId);
             saleItemMapper.insert(item);
         }
+
+        ledgerService.recordEntry(sale.getPartnerId(), LedgerType.RECEIVABLE, LedgerChangeType.SALE_CONFIRMED,
+                totalAmount, balanceAfter, "SALE", sale.getId(), userId);
 
         return sale;
     }
@@ -145,6 +157,9 @@ public class OptimisticLockSaleService implements SaleService {
         sale.setStatus(SaleStatus.CANCELED);
         sale.setCanceledAt(LocalDateTime.now());
         saleMapper.updateStatus(sale);
+
+        ledgerService.recordReceivableChange(sale.getPartnerId(), LedgerChangeType.SALE_CANCELED,
+                sale.getTotalAmount().negate(), "SALE", sale.getId(), userId);
 
         return sale;
     }

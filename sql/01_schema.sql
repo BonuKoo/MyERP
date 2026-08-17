@@ -35,7 +35,9 @@ CREATE TABLE partner (
     address             VARCHAR(255),
     is_active           BOOLEAN NOT NULL DEFAULT TRUE,
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    receivable_balance  DECIMAL(14,2) NOT NULL DEFAULT 0,   -- 미수금 잔액 (5단계)
+    payable_balance     DECIMAL(14,2) NOT NULL DEFAULT 0    -- 미지급금 잔액 (5단계)
 );
 
 CREATE TABLE company_info (
@@ -187,4 +189,42 @@ CREATE TABLE sale_item (
     amount             DECIMAL(14,2) NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sale(id),
     FOREIGN KEY (item_spec_id) REFERENCES item_spec(id)
+);
+
+-- ============================================================
+-- 5단계: 미수금/미지급금 원장
+-- ============================================================
+CREATE TABLE ledger_entry (
+    id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
+    partner_id              BIGINT NOT NULL,
+    ledger_type             VARCHAR(20) NOT NULL,   -- RECEIVABLE, PAYABLE
+    change_type             VARCHAR(30) NOT NULL,   -- SALE_CONFIRMED, SALE_CANCELED, PURCHASE_CONFIRMED, PURCHASE_CANCELED, PAYMENT_RECEIVED, PAYMENT_RECEIVED_CANCELED, PAYMENT_PAID, PAYMENT_PAID_CANCELED
+    amount                  DECIMAL(14,2) NOT NULL,  -- 부호 있는 증감액
+    balance_after           DECIMAL(14,2) NOT NULL,
+    related_document_type   VARCHAR(20),             -- SALE, PURCHASE, PAYMENT
+    related_document_id     BIGINT,
+    created_by              BIGINT NOT NULL,
+    created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (partner_id) REFERENCES partner(id),
+    FOREIGN KEY (created_by) REFERENCES company_user(id)
+);
+
+CREATE INDEX idx_ledger_entry_partner_created
+ON ledger_entry (partner_id, created_at DESC);
+
+CREATE TABLE payment (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    payment_no      VARCHAR(30) NOT NULL UNIQUE,
+    partner_id      BIGINT NOT NULL,
+    payment_type    VARCHAR(20) NOT NULL,   -- RECEIPT(수금), DISBURSEMENT(지급)
+    amount          DECIMAL(14,2) NOT NULL,
+    payment_date    DATE NOT NULL,
+    method          VARCHAR(20),
+    memo            VARCHAR(255),
+    status          VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
+    created_by      BIGINT NOT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    canceled_at     DATETIME,
+    FOREIGN KEY (partner_id) REFERENCES partner(id),
+    FOREIGN KEY (created_by) REFERENCES company_user(id)
 );

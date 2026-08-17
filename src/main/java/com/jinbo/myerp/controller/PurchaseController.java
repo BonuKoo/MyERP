@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.net.URI;
 
 @Tag(name = "매입 전표", description = "매입 등록 시 규격별 재고가 자동 증가하고, 취소 시 자동으로 반환된다.")
 @SecurityRequirement(name = "bearerAuth")
@@ -53,7 +54,7 @@ public class PurchaseController {
                 request.toDomain(),
                 request.items().stream().map(PurchaseItemRequest::toDomain).toList(),
                 currentUserId);
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.created(URI.create("/api/purchases/" + saved.getId()))
                 .body(PurchaseResponse.from(saved, purchaseService.findItemsByPurchaseId(saved.getId())));
     }
 
