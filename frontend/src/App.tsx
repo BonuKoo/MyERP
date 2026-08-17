@@ -7,6 +7,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import PartnerListPage from './pages/PartnerListPage';
 import PartnerFormPage from './pages/PartnerFormPage';
+import PartnerDetailPage from './pages/PartnerDetailPage';
+import PaymentFormPage from './pages/PaymentFormPage';
 import CategoryPage from './pages/CategoryPage';
 import ItemListPage from './pages/ItemListPage';
 import ItemFormPage from './pages/ItemFormPage';
@@ -43,7 +45,9 @@ export default function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/partners" element={<PartnerListPage />} />
                 <Route path="/partners/new" element={<PartnerFormPage />} />
+                <Route path="/partners/:id" element={<PartnerDetailPage />} />
                 <Route path="/partners/:id/edit" element={<PartnerFormPage />} />
+                <Route path="/partners/:id/payments/new" element={<PaymentFormPage />} />
                 <Route path="/categories" element={<CategoryPage />} />
                 <Route path="/items" element={<ItemListPage />} />
                 <Route path="/items/new" element={<ItemFormPage />} />

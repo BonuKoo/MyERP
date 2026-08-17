@@ -33,6 +33,8 @@ export default function PartnerListPage() {
             <th>구분</th>
             <th>담당자</th>
             <th>연락처</th>
+            <th>미수금</th>
+            <th>미지급금</th>
             <th>상태</th>
             <th />
           </tr>
@@ -40,10 +42,14 @@ export default function PartnerListPage() {
         <tbody>
           {data?.content.map((partner) => (
             <tr key={partner.id}>
-              <td>{partner.name}</td>
+              <td>
+                <Link to={`/partners/${partner.id}`}>{partner.name}</Link>
+              </td>
               <td>{partner.partnerType}</td>
               <td>{partner.contactName ?? '-'}</td>
               <td>{partner.contactPhone ?? '-'}</td>
+              <td>{partner.receivableBalance.toLocaleString()}</td>
+              <td>{partner.payableBalance.toLocaleString()}</td>
               <td>{partner.active ? '활성' : '비활성'}</td>
               <td>
                 <Link to={`/partners/${partner.id}/edit`}>수정</Link>

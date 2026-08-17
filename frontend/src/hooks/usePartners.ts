@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createPartner, deactivatePartner, fetchPartners, updatePartner } from '../api/partner';
+import { createPartner, deactivatePartner, fetchPartner, fetchPartners, updatePartner } from '../api/partner';
 import type { PartnerRequest } from '../types/api';
 
 /** 거래처 목록 쿼리 무효화에 쓰는 공용 키 */
@@ -10,6 +10,14 @@ export function usePartnerList(page: number, size: number) {
   return useQuery({
     queryKey: [...PARTNERS_QUERY_KEY, page, size],
     queryFn: () => fetchPartners(page, size),
+  });
+}
+
+/** 거래처 단건 조회(상세 페이지 — 잔액·원장·결제 진입점). */
+export function usePartnerDetail(id: number) {
+  return useQuery({
+    queryKey: [...PARTNERS_QUERY_KEY, id],
+    queryFn: () => fetchPartner(id),
   });
 }
 

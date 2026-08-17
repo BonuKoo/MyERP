@@ -3,6 +3,18 @@ export type PartnerType = 'SUPPLIER' | 'CUSTOMER' | 'BOTH';
 export type StockChangeType = 'PURCHASE_IN' | 'SALE_OUT' | 'ADJUST';
 export type PurchaseStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELED';
 export type SaleStatus = 'DRAFT' | 'CONFIRMED' | 'CANCELED';
+export type PaymentType = 'RECEIPT' | 'DISBURSEMENT';
+export type PaymentStatus = 'CONFIRMED' | 'CANCELED';
+export type LedgerType = 'RECEIVABLE' | 'PAYABLE';
+export type LedgerChangeType =
+  | 'SALE_CONFIRMED'
+  | 'SALE_CANCELED'
+  | 'PURCHASE_CONFIRMED'
+  | 'PURCHASE_CANCELED'
+  | 'PAYMENT_RECEIVED'
+  | 'PAYMENT_RECEIVED_CANCELED'
+  | 'PAYMENT_PAID'
+  | 'PAYMENT_PAID_CANCELED';
 
 export interface RegisterRequest {
   email: string;
@@ -54,6 +66,8 @@ export interface PartnerResponse {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  receivableBalance: number;
+  payableBalance: number;
 }
 
 export interface CategoryMainRequest {
@@ -241,6 +255,43 @@ export interface SaleResponse {
   createdAt: string;
   canceledAt: string | null;
   items: SaleItemResponse[];
+}
+
+export interface PaymentRequest {
+  partnerId: number;
+  paymentType: PaymentType;
+  amount: number;
+  paymentDate: string;
+  method?: string;
+  memo?: string;
+}
+
+export interface PaymentResponse {
+  id: number;
+  paymentNo: string;
+  partnerId: number;
+  paymentType: PaymentType;
+  amount: number;
+  paymentDate: string;
+  method: string | null;
+  memo: string | null;
+  status: PaymentStatus;
+  createdBy: number;
+  createdAt: string;
+  canceledAt: string | null;
+}
+
+export interface LedgerEntryResponse {
+  id: number;
+  partnerId: number;
+  ledgerType: LedgerType;
+  changeType: LedgerChangeType;
+  amount: number;
+  balanceAfter: number;
+  relatedDocumentType: string | null;
+  relatedDocumentId: number | null;
+  createdBy: number;
+  createdAt: string;
 }
 
 export interface PageResponse<T> {
