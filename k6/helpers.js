@@ -98,6 +98,11 @@ export function sampleServerMetrics(token) {
  * 이름에 타임스탬프+난수를 붙여서 실데이터/다른 실행과 절대 안 겹치게 한다.
  * 반환값을 setup()에서 그대로 리턴하면 모든 VU와 teardown()에 공유된다.
  *
+ * specCount(기본 1)를 1보다 크게 주면 같은 품목 아래 규격을 그만큼 만들어 itemSpecIds로
+ * 반환한다(각각 initialStock만큼 채운다). 경합도를 바꾸는 A3 스윕에 쓴다 — VU 100이
+ * 규격 1개에 몰릴 때와 100개에 흩어질 때 사이 어디서 결론이 뒤집히는지를 본다.
+ * itemSpecId는 첫 번째 규격으로 계속 채워주므로 기존 스크립트는 그대로 동작한다.
+ *
  * partnerCount(기본 1)를 1보다 크게 주면 거래처를 그만큼 만들어 partnerIds로 반환한다.
  * 5단계(원장) 도입 이후 매출 등록은 partner 행에도 UPDATE를 걸기 때문에, 같은
  * 거래처로 몰리는 시나리오(A, partnerCount=1)와 거래처를 분산하는 시나리오(B,
@@ -105,7 +110,7 @@ export function sampleServerMetrics(token) {
  * 처리량에 얼마나 영향을 주는지"를 분리해서 볼 수 있다. item_spec/재고는 두
  * 시나리오에서 동일하게 공유되므로 그 변수는 고정된다.
  */
-export function createFixture(token, initialStock, partnerCount = 1) {
+export function createFixture(token, initialStock, partnerCount = 1, specCount = 1) {
   const headers = authHeaders(token);
   const suffix = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
@@ -148,23 +153,27 @@ export function createFixture(token, initialStock, partnerCount = 1) {
   );
   const itemId = itemRes.json('id');
 
-  const specRes = http.post(
-    `${BASE_URL}/api/items/${itemId}/specs`,
-    JSON.stringify({ specName: '표준', unit: 'EA', costPrice: 1000, salePrice: 2000, safetyStock: 0 }),
-    headers,
-  );
-  check(specRes, { '규격 생성 성공(201)': (r) => r.status === 201 });
-  const itemSpecId = specRes.json('id');
+  const itemSpecIds = [];
+  for (let i = 0; i < specCount; i++) {
+    const specRes = http.post(
+      `${BASE_URL}/api/items/${itemId}/specs`,
+      JSON.stringify({ specName: `표준-${i}`, unit: 'EA', costPrice: 1000, salePrice: 2000, safetyStock: 0 }),
+      headers,
+    );
+    check(specRes, { '규격 생성 성공(201)': (r) => r.status === 201 });
+    const specId = specRes.json('id');
+    itemSpecIds.push(specId);
 
-  // 규격 등록 직후 재고는 항상 0으로 시작 → 수동 조정으로 원하는 초기 재고만큼 채운다.
-  const adjustRes = http.post(
-    `${BASE_URL}/api/item-specs/${itemSpecId}/stock/adjust`,
-    JSON.stringify({ quantityDelta: initialStock }),
-    headers,
-  );
-  check(adjustRes, { '초기 재고 세팅 성공(200)': (r) => r.status === 200 });
+    // 규격 등록 직후 재고는 항상 0으로 시작 → 수동 조정으로 원하는 초기 재고만큼 채운다.
+    const adjustRes = http.post(
+      `${BASE_URL}/api/item-specs/${specId}/stock/adjust`,
+      JSON.stringify({ quantityDelta: initialStock }),
+      headers,
+    );
+    check(adjustRes, { '초기 재고 세팅 성공(200)': (r) => r.status === 200 });
+  }
 
-  return { partnerId: partnerIds[0], partnerIds, companyInfoId, itemId, itemSpecId };
+  return { partnerId: partnerIds[0], partnerIds, companyInfoId, itemId, itemSpecId: itemSpecIds[0], itemSpecIds };
 }
 
 export function fetchCurrentStock(token, itemId, itemSpecId) {
