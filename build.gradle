@@ -32,6 +32,10 @@ dependencies {
 
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
+	// 부하 테스트 중 서버 내부(커넥션 풀/JVM/Tomcat 스레드)를 관측하기 위함.
+	// 클라이언트 측 지표만으로는 "왜 느려졌는가"가 추측이 된다 — k6/LOAD_TEST_PLAN.md 3절 참고.
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
 	testImplementation 'org.springframework.security:spring-security-test'

@@ -16,8 +16,8 @@
  * 주의: 로컬 개발 서버·DB에 실제로 부하가 걸린다.
  */
 import http from 'k6/http';
-import { check } from 'k6';
-import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary } from './helpers.js';
+import { check, sleep } from 'k6';
+import { BASE_URL, login, authHeaders, createFixture, fetchCurrentStock, classifyResponse, buildHandleSummary, sampleServerMetrics } from './helpers.js';
 
 const EMAIL = __ENV.TEST_EMAIL || 'owner@myerp.com';
 const PASSWORD = __ENV.TEST_PASSWORD || 'password123';
@@ -39,6 +39,13 @@ export const options = {
         { duration: '20s', target: 100 },
         { duration: '20s', target: 0 },
       ],
+    },
+    // 03-stress.js와 동일 조건으로 비교해야 하므로 서버 지표 수집도 똑같이 붙인다.
+    server_probe: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '120s',
+      exec: 'probeServer',
     },
   },
 };
@@ -64,6 +71,11 @@ export default function (data) {
   check(res, {
     '요청이 완전히 끊기지 않음(응답 자체는 옴)': (r) => r.status !== 0,
   });
+}
+
+export function probeServer(data) {
+  sampleServerMetrics(data.token);
+  sleep(1);
 }
 
 export function teardown(data) {

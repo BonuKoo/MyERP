@@ -9,6 +9,26 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+server:
+  tomcat:
+    mbeanregistry:
+      # tomcat.threads.* 지표는 이 값이 true여야 등록된다(기본 false).
+      # 부하 시 "요청이 스레드 레벨에서 밀리는지"를 보려면 필요하다.
+      enabled: true
+
+# 부하 테스트 중 서버 내부 관측용(k6/LOAD_TEST_PLAN.md 3절).
+# 노출은 필요한 것만 연다 — env/beans/configprops처럼 설정값이 통째로 드러나는
+# 엔드포인트는 열지 않는다. 접근 권한은 SecurityConfig의 anyRequest().authenticated()를
+# 그대로 따른다(actuator용 permitAll을 따로 두지 않음).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.jinbo.myerp.domain

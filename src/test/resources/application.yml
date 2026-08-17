@@ -8,6 +8,18 @@ spring:
     init:
       mode: embedded
 
+# 이 파일은 같은 이름의 main/resources/application.yml을 통째로 가린다(테스트 클래스패스 우선).
+# 그래서 main 쪽 management 설정이 테스트엔 적용되지 않아, 노출 범위를 여기에도 똑같이 둔다.
+# ActuatorMetricsExposureTest가 검증하는 대상이 바로 이 설정이다.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.jinbo.myerp.domain
