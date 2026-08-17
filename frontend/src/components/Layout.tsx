@@ -23,6 +23,7 @@ export default function Layout() {
             <Link to="/items">품목</Link>
             <Link to="/purchases">매입</Link>
             <Link to="/sales">매출</Link>
+            <Link to="/payments">결제</Link>
             <Link to="/company-info">회사정보</Link>
             <span className="user-info">
               {user?.name} ({user?.role})
