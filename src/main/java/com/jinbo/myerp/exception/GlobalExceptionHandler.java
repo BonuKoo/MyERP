@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -67,6 +68,18 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("잘못된 요청입니다.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    /**
+     * 매핑되지 않은 URL은 이 예외로 도달한다. 아래 Exception.class catch-all이
+     * 이것까지 잡으면 클라이언트의 URL 오타/오호출이 서버 결함(500)으로 둔갑해
+     * 원인 파악을 방해하고, k6/모니터링에서 5xx를 서버 결함 지표로 쓰는 전제도
+     * 깨진다. 더 구체적인 타입이라 Exception.class보다 먼저 매칭된다.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(HttpStatus.NOT_FOUND, "요청한 경로를 찾을 수 없습니다."));
     }
 
     @ExceptionHandler(Exception.class)
