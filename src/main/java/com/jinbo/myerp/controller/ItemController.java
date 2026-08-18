@@ -5,9 +5,12 @@ import com.jinbo.myerp.controller.dto.ItemResponse;
 import com.jinbo.myerp.controller.dto.ItemSpecRequest;
 import com.jinbo.myerp.controller.dto.ItemSpecResponse;
 import com.jinbo.myerp.controller.dto.PageResponse;
+import com.jinbo.myerp.service.PageResult;
 import com.jinbo.myerp.domain.Item;
+import com.jinbo.myerp.domain.ItemImage;
 import com.jinbo.myerp.domain.ItemSpec;
 import com.jinbo.myerp.exception.ErrorResponse;
+import com.jinbo.myerp.service.ItemImageService;
 import com.jinbo.myerp.service.ItemService;
 import com.jinbo.myerp.service.ItemSpecService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag(name = "품목", description = "품목 등록/조회 및 품목의 규격(ItemSpec) 등록/조회")
 @SecurityRequirement(name = "bearerAuth")
@@ -41,6 +47,7 @@ public class ItemController {
 
     private final ItemService itemService;
     private final ItemSpecService itemSpecService;
+    private final ItemImageService itemImageService;
 
     @Operation(summary = "품목 등록", description = "categorySubId가 가리키는 중분류가 존재해야 하며, " +
             "certificationIds로 인증정보를 다대다로 함께 연결할 수 있다.")
@@ -53,8 +60,24 @@ public class ItemController {
     public ResponseEntity<ItemResponse> register(@Valid @RequestBody ItemRequest request) {
         Item saved = itemService.register(request.toDomain(), request.certificationIdsOrEmpty());
         List<com.jinbo.myerp.domain.Certification> certifications = itemService.findCertifications(saved.getId());
+        // 방금 만든 품목이라 사진은 아직 없다. 사진은 별도 업로드 API로 붙인다.
         return ResponseEntity.created(URI.create("/api/items/" + saved.getId()))
-                .body(ItemResponse.from(saved, certifications));
+                .body(ItemResponse.from(saved, certifications, List.of()));
+    }
+
+    @Operation(summary = "품목 수정", description = "분류/이름/설명/KS규격과 연결된 인증정보를 통째로 교체한다. " +
+            "사진은 이 API가 아니라 품목 사진 API로 관리한다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 품목 또는 중분류",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<ItemResponse> update(@PathVariable Long id, @Valid @RequestBody ItemRequest request) {
+        Item updated = itemService.update(id, request.toDomain(), request.certificationIdsOrEmpty());
+        List<com.jinbo.myerp.domain.Certification> certifications = itemService.findCertifications(id);
+        List<ItemImage> images = itemImageService.findByItemId(id);
+        return ResponseEntity.ok(ItemResponse.from(updated, certifications, images));
     }
 
     @Operation(summary = "품목 단건 조회", description = "연결된 인증정보 목록을 함께 반환한다.")
@@ -67,19 +90,31 @@ public class ItemController {
     public ResponseEntity<ItemResponse> findById(@PathVariable Long id) {
         Item item = itemService.findById(id);
         List<com.jinbo.myerp.domain.Certification> certifications = itemService.findCertifications(id);
-        return ResponseEntity.ok(ItemResponse.from(item, certifications));
+        List<ItemImage> images = itemImageService.findByItemId(id);
+        return ResponseEntity.ok(ItemResponse.from(item, certifications, images));
     }
 
     @Operation(summary = "품목 목록 조회 (페이징)", description = "categoryMainId만 주면 그 대분류 아래 모든 중분류의 품목을, " +
-            "categorySubId까지 주면 그 중분류의 품목만 반환한다. 둘 다 생략하면 전체 품목을 반환한다.")
+            "categorySubId까지 주면 그 중분류의 품목만 반환한다. 둘 다 생략하면 전체 품목을 반환한다. " +
+            "각 품목의 images에는 카드에 쓸 대표 사진 1장만 담긴다.")
     @GetMapping
     public ResponseEntity<PageResponse<ItemResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Long categoryMainId,
             @RequestParam(required = false) Long categorySubId) {
-        return ResponseEntity.ok(PageResponse.of(itemService.findAll(page, size, categoryMainId, categorySubId),
-                item -> ItemResponse.from(item, itemService.findCertifications(item.getId()))));
+        PageResult<Item> result = itemService.findAll(page, size, categoryMainId, categorySubId);
+
+        // 품목마다 사진을 따로 조회하면 목록 한 페이지가 N+1 쿼리가 된다. 대표 사진을
+        // 한 번에 가져와 메모리에서 붙인다.
+        List<Long> itemIds = result.content().stream().map(Item::getId).toList();
+        Map<Long, List<ItemImage>> primaryByItemId = itemImageService.findPrimaryByItemIds(itemIds).stream()
+                .collect(Collectors.groupingBy(ItemImage::getItemId));
+
+        return ResponseEntity.ok(PageResponse.of(result,
+                item -> ItemResponse.from(item,
+                        itemService.findCertifications(item.getId()),
+                        primaryByItemId.getOrDefault(item.getId(), List.of()))));
     }
 
     @Operation(summary = "품목 규격 등록", description = "등록 직후 현재재고(currentStock)는 항상 0으로 시작한다. " +
