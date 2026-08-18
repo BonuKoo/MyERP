@@ -87,6 +87,19 @@ CREATE TABLE IF NOT EXISTS item_certification (
     PRIMARY KEY (item_id, certification_id)
 );
 
+CREATE TABLE IF NOT EXISTS item_image (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    item_id             BIGINT NOT NULL,
+    upload_file_name    VARCHAR(255) NOT NULL,
+    store_file_name     VARCHAR(255) NOT NULL,
+    file_path           VARCHAR(500) NOT NULL,
+    file_type           VARCHAR(100) NOT NULL,
+    file_size           BIGINT NOT NULL,
+    display_order       INT NOT NULL DEFAULT 0,
+    is_primary          BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS stock_history (
     id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
     item_spec_id            BIGINT NOT NULL,
