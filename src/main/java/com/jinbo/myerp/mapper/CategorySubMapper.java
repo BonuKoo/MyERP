@@ -16,5 +16,7 @@ public interface CategorySubMapper {
 
     List<CategorySub> findByCategoryMainId(@Param("categoryMainId") Long categoryMainId);
 
+    List<CategorySub> findAll();
+
     void update(CategorySub categorySub);
 }

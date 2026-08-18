@@ -42,4 +42,8 @@ public class CategoryService {
     public List<CategorySub> findSubsByMainId(Long categoryMainId) {
         return categorySubMapper.findByCategoryMainId(categoryMainId);
     }
+
+    public List<CategorySub> findAllSub() {
+        return categorySubMapper.findAll();
+    }
 }
