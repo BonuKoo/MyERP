@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.DepartmentMapper">
+
+    <!-- is_active는 boolean 컬럼이라 map-underscore-to-camel-case만으로는 매핑되지
+         않는다(계층 설계 원칙 1) -->
+    <resultMap id="departmentResultMap" type="com.jinbo.myerp.domain.Department">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="active" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="columns">id, name, is_active, created_at</sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Department" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO department (name, is_active, created_at)
+        VALUES (#{name}, #{active}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="departmentResultMap">
+        SELECT <include refid="columns"/>
+        FROM department
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByName" resultMap="departmentResultMap">
+        SELECT <include refid="columns"/>
+        FROM department
+        WHERE name = #{name}
+    </select>
+
+    <select id="findAll" resultMap="departmentResultMap">
+        SELECT <include refid="columns"/>
+        FROM department
+        ORDER BY id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM department
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Department">
+        UPDATE department
+        SET name = #{name},
+            is_active = #{active}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
