@@ -70,12 +70,15 @@ public class ItemController {
         return ResponseEntity.ok(ItemResponse.from(item, certifications));
     }
 
-    @Operation(summary = "품목 목록 조회 (페이징)")
+    @Operation(summary = "품목 목록 조회 (페이징)", description = "categoryMainId만 주면 그 대분류 아래 모든 중분류의 품목을, " +
+            "categorySubId까지 주면 그 중분류의 품목만 반환한다. 둘 다 생략하면 전체 품목을 반환한다.")
     @GetMapping
     public ResponseEntity<PageResponse<ItemResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(PageResponse.of(itemService.findAll(page, size),
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long categoryMainId,
+            @RequestParam(required = false) Long categorySubId) {
+        return ResponseEntity.ok(PageResponse.of(itemService.findAll(page, size, categoryMainId, categorySubId),
                 item -> ItemResponse.from(item, itemService.findCertifications(item.getId()))));
     }
 

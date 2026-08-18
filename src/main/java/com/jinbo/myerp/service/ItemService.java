@@ -45,10 +45,10 @@ public class ItemService {
                 .orElseThrow(() -> new ItemNotFoundException(id));
     }
 
-    public PageResult<Item> findAll(int page, int size) {
+    public PageResult<Item> findAll(int page, int size, Long categoryMainId, Long categorySubId) {
         int offset = page * size;
-        List<Item> content = itemMapper.findAll(offset, size);
-        long totalCount = itemMapper.countAll();
+        List<Item> content = itemMapper.findAll(offset, size, categoryMainId, categorySubId);
+        long totalCount = itemMapper.countAll(categoryMainId, categorySubId);
         return new PageResult<>(content, totalCount, page, size);
     }
 

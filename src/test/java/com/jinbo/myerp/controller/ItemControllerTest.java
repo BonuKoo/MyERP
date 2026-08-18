@@ -27,6 +27,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -99,12 +100,25 @@ class ItemControllerTest {
     @Test
     void findAll_returnsPagedResponse() throws Exception {
         Item item = Item.builder().id(1L).name("a").build();
-        given(itemService.findAll(0, 20)).willReturn(new PageResult<>(List.of(item), 1, 0, 20));
+        given(itemService.findAll(0, 20, null, null)).willReturn(new PageResult<>(List.of(item), 1, 0, 20));
 
         mockMvc.perform(get("/api/items")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
+    void findAll_withCategoryFilterParams_passesToService() throws Exception {
+        given(itemService.findAll(0, 20, 1L, 2L)).willReturn(new PageResult<>(List.of(), 0, 0, 20));
+
+        mockMvc.perform(get("/api/items")
+                        .param("categoryMainId", "1")
+                        .param("categorySubId", "2")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isOk());
+
+        verify(itemService).findAll(0, 20, 1L, 2L);
     }
 
     @Test

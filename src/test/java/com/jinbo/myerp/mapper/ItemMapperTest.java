@@ -25,12 +25,20 @@ class ItemMapperTest {
     @Autowired
     private ItemMapper itemMapper;
 
-    private Long insertCategorySub() {
-        CategoryMain main = CategoryMain.builder().name("타일/건축용접착제").displayOrder(1).active(true).build();
+    private Long insertCategoryMain(String name) {
+        CategoryMain main = CategoryMain.builder().name(name).displayOrder(1).active(true).build();
         categoryMainMapper.insert(main);
-        CategorySub sub = CategorySub.builder().categoryMainId(main.getId()).name("내장타일 접착제").displayOrder(1).active(true).build();
+        return main.getId();
+    }
+
+    private Long insertCategorySub(Long categoryMainId, String name) {
+        CategorySub sub = CategorySub.builder().categoryMainId(categoryMainId).name(name).displayOrder(1).active(true).build();
         categorySubMapper.insert(sub);
         return sub.getId();
+    }
+
+    private Long insertCategorySub() {
+        return insertCategorySub(insertCategoryMain("타일/건축용접착제"), "내장타일 접착제");
     }
 
     private Item newItem(Long categorySubId, String name) {
@@ -60,30 +68,55 @@ class ItemMapperTest {
     }
 
     @Test
-    void findByCategorySubId_returnsOnlyMatching() {
-        Long categorySubId = insertCategorySub();
-        itemMapper.insert(newItem(categorySubId, "세라픽스 PC-7000D"));
-        itemMapper.insert(newItem(categorySubId, "세라픽스 PC-7000L"));
-
-        List<Item> items = itemMapper.findByCategorySubId(categorySubId);
-
-        assertThat(items).hasSize(2);
-        assertThat(items).extracting(Item::getName)
-                .containsExactlyInAnyOrder("세라픽스 PC-7000D", "세라픽스 PC-7000L");
-    }
-
-    @Test
     void findAllAndCountAll_withPaging() {
         Long categorySubId = insertCategorySub();
         for (int i = 1; i <= 3; i++) {
             itemMapper.insert(newItem(categorySubId, "품목" + i));
         }
 
-        List<Item> page = itemMapper.findAll(0, 2);
-        int total = itemMapper.countAll();
+        List<Item> page = itemMapper.findAll(0, 2, null, null);
+        int total = itemMapper.countAll(null, null);
 
         assertThat(page).hasSize(2);
         assertThat(total).isEqualTo(3);
+    }
+
+    @Test
+    void findAll_filterByCategorySubId_returnsOnlyThatSub() {
+        Long mainId = insertCategoryMain("타일/건축용접착제");
+        Long subA = insertCategorySub(mainId, "내장타일 접착제");
+        Long subB = insertCategorySub(mainId, "고성능타일 접착제");
+        itemMapper.insert(newItem(subA, "세라픽스 PC-7000D"));
+        itemMapper.insert(newItem(subA, "세라픽스 PC-7000L"));
+        itemMapper.insert(newItem(subB, "세라픽스 PC-9000P"));
+
+        List<Item> items = itemMapper.findAll(0, 20, null, subA);
+        int total = itemMapper.countAll(null, subA);
+
+        assertThat(items).hasSize(2);
+        assertThat(items).extracting(Item::getName)
+                .containsExactlyInAnyOrder("세라픽스 PC-7000D", "세라픽스 PC-7000L");
+        assertThat(total).isEqualTo(2);
+    }
+
+    @Test
+    void findAll_filterByCategoryMainId_returnsAllSubsUnderThatMain() {
+        Long mainA = insertCategoryMain("타일/건축용접착제");
+        Long subA1 = insertCategorySub(mainA, "내장타일 접착제");
+        Long subA2 = insertCategorySub(mainA, "고성능타일 접착제");
+        Long mainB = insertCategoryMain("목공/지물용접착제");
+        Long subB1 = insertCategorySub(mainB, "목공용 접착제");
+        itemMapper.insert(newItem(subA1, "세라픽스 PC-7000D"));
+        itemMapper.insert(newItem(subA2, "세라픽스 PC-9000P"));
+        itemMapper.insert(newItem(subB1, "우드본드 705"));
+
+        List<Item> items = itemMapper.findAll(0, 20, mainA, null);
+        int total = itemMapper.countAll(mainA, null);
+
+        assertThat(items).hasSize(2);
+        assertThat(items).extracting(Item::getName)
+                .containsExactlyInAnyOrder("세라픽스 PC-7000D", "세라픽스 PC-9000P");
+        assertThat(total).isEqualTo(2);
     }
 
     @Test
