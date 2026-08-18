@@ -78,6 +78,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/company-info", "/api/categories/**", "/api/certifications").hasRole("OWNER")
                         // 거래처 비활성화
                         .requestMatchers(HttpMethod.DELETE, "/api/partners/*").hasRole("OWNER")
+                        // 인사관리 마스터: 부서 등록/수정/비활성화(조회는 STAFF도 가능)
+                        .requestMatchers(HttpMethod.POST, "/api/departments").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PUT, "/api/departments/*").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/departments/*").hasRole("OWNER")
 
                         .anyRequest().authenticated()
                 )

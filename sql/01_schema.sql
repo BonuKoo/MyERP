@@ -247,3 +247,13 @@ CREATE TABLE payment (
     FOREIGN KEY (partner_id) REFERENCES partner(id),
     FOREIGN KEY (created_by) REFERENCES company_user(id)
 );
+
+-- ============================================================
+-- 6단계: 인사관리(HR) — 부서/직책/사원/근태/휴가/급여
+-- ============================================================
+CREATE TABLE department (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
