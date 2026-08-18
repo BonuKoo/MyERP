@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useCategoryMains, useCategoryMutations, useCategorySubs } from '../hooks/useCategories';
+import { useAuth } from '../auth/AuthContext';
 
 export default function CategoryPage() {
   const [selectedMainId, setSelectedMainId] = useState<number | null>(null);
   const [newMainName, setNewMainName] = useState('');
   const [newSubName, setNewSubName] = useState('');
+  const { isOwner } = useAuth();
 
   const mainsQuery = useCategoryMains();
   const subsQuery = useCategorySubs(selectedMainId);
@@ -48,17 +50,20 @@ export default function CategoryPage() {
               </li>
             ))}
           </ul>
-          <form onSubmit={handleCreateMain} className="inline-form">
-            <input
-              type="text"
-              placeholder="새 대분류명"
-              value={newMainName}
-              onChange={(e) => setNewMainName(e.target.value)}
-            />
-            <button type="submit" disabled={createMainMutation.isPending}>
-              추가
-            </button>
-          </form>
+          {/* 분류 체계는 마스터 데이터라 등록은 OWNER 전용(백엔드도 403으로 막는다) */}
+          {isOwner && (
+            <form onSubmit={handleCreateMain} className="inline-form">
+              <input
+                type="text"
+                placeholder="새 대분류명"
+                value={newMainName}
+                onChange={(e) => setNewMainName(e.target.value)}
+              />
+              <button type="submit" disabled={createMainMutation.isPending}>
+                추가
+              </button>
+            </form>
+          )}
         </section>
 
         <section>
@@ -72,17 +77,19 @@ export default function CategoryPage() {
                   <li key={sub.id}>{sub.name}</li>
                 ))}
               </ul>
-              <form onSubmit={handleCreateSub} className="inline-form">
-                <input
-                  type="text"
-                  placeholder="새 중분류명"
-                  value={newSubName}
-                  onChange={(e) => setNewSubName(e.target.value)}
-                />
-                <button type="submit" disabled={createSubMutation.isPending}>
-                  추가
-                </button>
-              </form>
+              {isOwner && (
+                <form onSubmit={handleCreateSub} className="inline-form">
+                  <input
+                    type="text"
+                    placeholder="새 중분류명"
+                    value={newSubName}
+                    onChange={(e) => setNewSubName(e.target.value)}
+                  />
+                  <button type="submit" disabled={createSubMutation.isPending}>
+                    추가
+                  </button>
+                </form>
+              )}
             </>
           )}
         </section>

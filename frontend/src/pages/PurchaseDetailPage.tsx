@@ -1,5 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePurchaseDetail, usePurchaseMutations } from '../hooks/usePurchases';
+import { useAuth } from '../auth/AuthContext';
+import { errorMessageOf } from '../api/client';
 import type { PurchaseStatus } from '../types/api';
 
 const STATUS_LABEL: Record<PurchaseStatus, string> = {
@@ -21,6 +23,7 @@ export default function PurchaseDetailPage() {
 
   const purchaseQuery = usePurchaseDetail(purchaseId);
   const { cancelMutation } = usePurchaseMutations();
+  const { isOwner } = useAuth();
 
   if (purchaseQuery.isLoading) return <p>불러오는 중...</p>;
   if (purchaseQuery.isError || !purchaseQuery.data) {
@@ -66,7 +69,8 @@ export default function PurchaseDetailPage() {
         </tbody>
       </table>
 
-      {purchase.status === 'CONFIRMED' && (
+      {/* 전표 취소는 재고와 원장을 되돌리므로 OWNER 전용(백엔드도 403으로 막는다) */}
+      {purchase.status === 'CONFIRMED' && isOwner && (
         <button
           type="button"
           className="button-danger"
@@ -77,7 +81,7 @@ export default function PurchaseDetailPage() {
         </button>
       )}
       {cancelMutation.isError && (
-        <p className="error-message">취소에 실패했습니다.</p>
+        <p className="error-message">{errorMessageOf(cancelMutation.error, '취소에 실패했습니다.')}</p>
       )}
     </div>
   );

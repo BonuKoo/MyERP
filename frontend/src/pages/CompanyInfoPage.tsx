@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useCompanyInfoList, useCompanyInfoMutations } from '../hooks/useCompanyInfo';
+import { useAuth } from '../auth/AuthContext';
+import { errorMessageOf } from '../api/client';
 import type { CompanyInfoRequest } from '../types/api';
 
 const emptyForm: CompanyInfoRequest = {
@@ -15,6 +17,7 @@ export default function CompanyInfoPage() {
   const listQuery = useCompanyInfoList();
   const { createMutation } = useCompanyInfoMutations();
   const [form, setForm] = useState<CompanyInfoRequest>(emptyForm);
+  const { isOwner } = useAuth();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -54,6 +57,13 @@ export default function CompanyInfoPage() {
         <p>등록된 회사 정보가 없습니다. 매입/매출 전표를 발행하려면 먼저 등록하세요.</p>
       )}
 
+      {/* 회사정보는 마스터 데이터라 OWNER 전용(백엔드도 403으로 막는다) */}
+      {!isOwner && (
+        <p className="form-hint">회사 정보 등록은 사업주만 할 수 있습니다. 조회만 가능합니다.</p>
+      )}
+
+      {isOwner && (
+        <>
       <h2>회사 정보 등록</h2>
       <form onSubmit={handleSubmit}>
         <label>
@@ -100,7 +110,12 @@ export default function CompanyInfoPage() {
         <button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending ? '저장 중...' : '등록'}
         </button>
+        {createMutation.isError && (
+          <p className="error-message">{errorMessageOf(createMutation.error, '등록에 실패했습니다.')}</p>
+        )}
       </form>
+        </>
+      )}
     </div>
   );
 }

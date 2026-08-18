@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Layout() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, isOwner, user, logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -25,6 +25,8 @@ export default function Layout() {
             <NavLink to="/sales">매출</NavLink>
             <NavLink to="/payments">결제</NavLink>
             <NavLink to="/company-info">회사정보</NavLink>
+            {/* 계정 생성은 OWNER만 가능하므로 진입점도 OWNER에게만 보인다 */}
+            {isOwner && <NavLink to="/signup">사용자 등록</NavLink>}
             <span className="user-info">
               {user?.name} ({user?.role})
             </span>

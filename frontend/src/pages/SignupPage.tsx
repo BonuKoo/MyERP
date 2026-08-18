@@ -2,9 +2,10 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import { errorMessageOf } from '../api/client';
 import { register as registerApi } from '../api/auth';
-import type { ErrorResponse, UserRole } from '../types/api';
+import { useAuth } from '../auth/AuthContext';
+import type { UserRole } from '../types/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -12,11 +13,13 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('STAFF');
   const navigate = useNavigate();
+  const { isAuthenticated, isOwner } = useAuth();
 
   const mutation = useMutation({
     mutationFn: registerApi,
+    // 로그인한 OWNER가 직원 계정을 만든 경우엔 로그인 화면으로 보낼 이유가 없다.
     onSuccess: () => {
-      navigate('/login', { replace: true });
+      navigate(isOwner ? '/partners' : '/login', { replace: true });
     },
   });
 
@@ -27,7 +30,18 @@ export default function SignupPage() {
 
   return (
     <div className="auth-page">
-      <h1>회원가입</h1>
+      <h1>{isOwner ? '사용자 등록' : '회원가입'}</h1>
+      {/*
+        계정 생성은 사업주(OWNER)만 할 수 있다. 다만 최초 사용자가 한 명도 없을 때는
+        최초 OWNER를 만들 수 있도록 서버가 예외적으로 허용하므로, 화면 자체는 막지 않고
+        서버가 403을 주면 안내한다(어느 쪽인지는 서버만 알 수 있다).
+      */}
+      {!isAuthenticated && (
+        <p className="form-hint">
+          계정 생성은 사업주만 할 수 있습니다. 최초 사용자를 만드는 경우가 아니라면
+          관리자에게 계정 생성을 요청하세요.
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <label>
           이메일
@@ -67,10 +81,7 @@ export default function SignupPage() {
           {mutation.isPending ? '가입 중...' : '가입하기'}
         </button>
         {mutation.isError && (
-          <p className="error-message">
-            {(mutation.error as AxiosError<ErrorResponse>).response?.data?.message ??
-              '회원가입에 실패했습니다.'}
-          </p>
+          <p className="error-message">{errorMessageOf(mutation.error, '회원가입에 실패했습니다.')}</p>
         )}
       </form>
       <p>

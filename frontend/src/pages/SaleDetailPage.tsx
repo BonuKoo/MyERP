@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import type { AxiosError } from 'axios';
 import { useSaleDetail, useSaleMutations } from '../hooks/useSales';
-import type { ErrorResponse, SaleStatus } from '../types/api';
+import { useAuth } from '../auth/AuthContext';
+import { errorMessageOf } from '../api/client';
+import type { SaleStatus } from '../types/api';
 
 const STATUS_LABEL: Record<SaleStatus, string> = {
   DRAFT: '임시저장',
@@ -22,6 +23,7 @@ export default function SaleDetailPage() {
 
   const saleQuery = useSaleDetail(saleId);
   const { cancelMutation } = useSaleMutations();
+  const { isOwner } = useAuth();
 
   if (saleQuery.isLoading) return <p>불러오는 중...</p>;
   if (saleQuery.isError || !saleQuery.data) {
@@ -67,7 +69,8 @@ export default function SaleDetailPage() {
         </tbody>
       </table>
 
-      {sale.status === 'CONFIRMED' && (
+      {/* 전표 취소는 재고와 원장을 되돌리므로 OWNER 전용(백엔드도 403으로 막는다) */}
+      {sale.status === 'CONFIRMED' && isOwner && (
         <button
           type="button"
           className="button-danger"
@@ -78,10 +81,7 @@ export default function SaleDetailPage() {
         </button>
       )}
       {cancelMutation.isError && (
-        <p className="error-message">
-          {(cancelMutation.error as AxiosError<ErrorResponse>).response?.data?.message ??
-            '취소에 실패했습니다.'}
-        </p>
+        <p className="error-message">{errorMessageOf(cancelMutation.error, '취소에 실패했습니다.')}</p>
       )}
     </div>
   );

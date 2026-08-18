@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePaymentList, usePaymentMutations } from '../hooks/usePayments';
+import { useAuth } from '../auth/AuthContext';
+import { errorMessageOf } from '../api/client';
 
 const PAGE_SIZE = 20;
 
@@ -8,6 +10,7 @@ export default function PaymentListPage() {
   const [page, setPage] = useState(0);
   const paymentsQuery = usePaymentList(page, PAGE_SIZE);
   const { cancelMutation } = usePaymentMutations();
+  const { isOwner } = useAuth();
 
   if (paymentsQuery.isLoading) return <p>불러오는 중...</p>;
   if (paymentsQuery.isError) {
@@ -53,7 +56,8 @@ export default function PaymentListPage() {
                 </span>
               </td>
               <td>
-                {payment.status === 'CONFIRMED' && (
+                {/* 결제 취소는 OWNER 전용(백엔드도 403으로 막는다) */}
+                {payment.status === 'CONFIRMED' && isOwner && (
                   <button
                     type="button"
                     className="button-danger"
@@ -80,7 +84,9 @@ export default function PaymentListPage() {
           다음
         </button>
       </div>
-      {cancelMutation.isError && <p className="error-message">결제 취소에 실패했습니다.</p>}
+      {cancelMutation.isError && (
+        <p className="error-message">{errorMessageOf(cancelMutation.error, '결제 취소에 실패했습니다.')}</p>
+      )}
     </div>
   );
 }
