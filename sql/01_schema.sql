@@ -111,6 +111,25 @@ CREATE TABLE item_certification (
     FOREIGN KEY (certification_id) REFERENCES certification(id)
 );
 
+-- 품목 사진. 한 품목에 여러 장(1:N)이고 순서가 의미를 가지므로 display_order로
+-- 정렬한다. 목록 카드에 쓸 대표 사진은 키가 아니라 속성이라 is_primary 플래그로 둔다
+-- (품목당 최대 1건이 TRUE — 애플리케이션이 보장).
+CREATE TABLE item_image (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    item_id             BIGINT NOT NULL,
+    upload_file_name    VARCHAR(255) NOT NULL,      -- 사용자가 올린 원본 파일명
+    store_file_name     VARCHAR(255) NOT NULL,      -- 서버 저장명 (UUID.확장자)
+    file_path           VARCHAR(500) NOT NULL,
+    file_type           VARCHAR(100) NOT NULL,      -- MIME type
+    file_size           BIGINT NOT NULL,
+    display_order       INT NOT NULL DEFAULT 0,
+    is_primary          BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES item(id)
+);
+
+CREATE INDEX idx_item_image_item ON item_image (item_id, display_order);
+
 CREATE TABLE stock_history (
     id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
     item_spec_id            BIGINT NOT NULL,
