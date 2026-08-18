@@ -1,5 +1,18 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePurchaseDetail, usePurchaseMutations } from '../hooks/usePurchases';
+import type { PurchaseStatus } from '../types/api';
+
+const STATUS_LABEL: Record<PurchaseStatus, string> = {
+  DRAFT: '임시저장',
+  CONFIRMED: '확정',
+  CANCELED: '취소됨',
+};
+
+const STATUS_BADGE: Record<PurchaseStatus, string> = {
+  DRAFT: 'badge badge-neutral',
+  CONFIRMED: 'badge badge-success',
+  CANCELED: 'badge badge-danger',
+};
 
 export default function PurchaseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +38,9 @@ export default function PurchaseDetailPage() {
         </button>
       </div>
       <p>매입일자: {purchase.purchaseDate}</p>
-      <p>상태: {purchase.status}</p>
+      <p>
+        상태: <span className={STATUS_BADGE[purchase.status]}>{STATUS_LABEL[purchase.status]}</span>
+      </p>
       <p>합계금액: {purchase.totalAmount.toLocaleString()}</p>
       <p>메모: {purchase.memo ?? '-'}</p>
 
@@ -54,6 +69,7 @@ export default function PurchaseDetailPage() {
       {purchase.status === 'CONFIRMED' && (
         <button
           type="button"
+          className="button-danger"
           onClick={() => cancelMutation.mutate(purchase.id)}
           disabled={cancelMutation.isPending}
         >

@@ -47,11 +47,16 @@ export default function PaymentListPage() {
               <td>{payment.amount.toLocaleString()}</td>
               <td>{payment.paymentDate}</td>
               <td>{payment.method ?? '-'}</td>
-              <td>{payment.status === 'CONFIRMED' ? '확정' : '취소됨'}</td>
+              <td>
+                <span className={payment.status === 'CONFIRMED' ? 'badge badge-success' : 'badge badge-danger'}>
+                  {payment.status === 'CONFIRMED' ? '확정' : '취소됨'}
+                </span>
+              </td>
               <td>
                 {payment.status === 'CONFIRMED' && (
                   <button
                     type="button"
+                    className="button-danger"
                     onClick={() => cancelMutation.mutate(payment.id)}
                     disabled={cancelMutation.isPending}
                   >

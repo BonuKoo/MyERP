@@ -1,7 +1,19 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import { useSaleDetail, useSaleMutations } from '../hooks/useSales';
-import type { ErrorResponse } from '../types/api';
+import type { ErrorResponse, SaleStatus } from '../types/api';
+
+const STATUS_LABEL: Record<SaleStatus, string> = {
+  DRAFT: '임시저장',
+  CONFIRMED: '확정',
+  CANCELED: '취소됨',
+};
+
+const STATUS_BADGE: Record<SaleStatus, string> = {
+  DRAFT: 'badge badge-neutral',
+  CONFIRMED: 'badge badge-success',
+  CANCELED: 'badge badge-danger',
+};
 
 export default function SaleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +39,9 @@ export default function SaleDetailPage() {
         </button>
       </div>
       <p>매출일자: {sale.saleDate}</p>
-      <p>상태: {sale.status}</p>
+      <p>
+        상태: <span className={STATUS_BADGE[sale.status]}>{STATUS_LABEL[sale.status]}</span>
+      </p>
       <p>합계금액: {sale.totalAmount.toLocaleString()}</p>
       <p>메모: {sale.memo ?? '-'}</p>
 
@@ -56,6 +70,7 @@ export default function SaleDetailPage() {
       {sale.status === 'CONFIRMED' && (
         <button
           type="button"
+          className="button-danger"
           onClick={() => cancelMutation.mutate(sale.id)}
           disabled={cancelMutation.isPending}
         >

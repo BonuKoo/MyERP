@@ -69,71 +69,80 @@ export default function ItemListPage() {
         </Link>
       </div>
 
-      <fieldset>
-        <legend>대분류</legend>
-        <label>
-          <input type="radio" checked={mainId === null} onChange={() => selectMain(null)} />
-          전체
-        </label>
-        {mainsQuery.data?.map((main) => (
-          <label key={main.id}>
-            <input type="radio" checked={mainId === main.id} onChange={() => selectMain(main.id)} />
-            {main.name}
-          </label>
-        ))}
-      </fieldset>
-
-      {mainId !== null && (
-        <fieldset>
-          <legend>중분류</legend>
-          <label>
-            <input type="radio" checked={subId === null} onChange={() => selectSub(null)} />
-            전체
-          </label>
-          {subsQuery.data?.map((sub) => (
-            <label key={sub.id}>
-              <input type="radio" checked={subId === sub.id} onChange={() => selectSub(sub.id)} />
-              {sub.name}
+      <div className="category-filter">
+        <ul className="category-tabs">
+          <li>
+            <label className={mainId === null ? 'tab-label active' : 'tab-label'}>
+              <input type="radio" checked={mainId === null} onChange={() => selectMain(null)} />
+              전체 품목
             </label>
+          </li>
+          {mainsQuery.data?.map((main) => (
+            <li key={main.id}>
+              <label className={mainId === main.id ? 'tab-label active' : 'tab-label'}>
+                <input type="radio" checked={mainId === main.id} onChange={() => selectMain(main.id)} />
+                {main.name}
+              </label>
+            </li>
           ))}
-        </fieldset>
-      )}
+        </ul>
 
-      <p className="breadcrumb">
-        {selectedMainName ? (selectedSubName ? `${selectedMainName} > ${selectedSubName}` : selectedMainName) : '전체 품목'}
         {mainId !== null && (
-          <button type="button" onClick={() => selectMain(null)}>
-            분류 초기화
-          </button>
+          <ul className="category-pills">
+            <li>
+              <label className={subId === null ? 'pill-label active' : 'pill-label'}>
+                <input type="radio" checked={subId === null} onChange={() => selectSub(null)} />
+                전체
+              </label>
+            </li>
+            {subsQuery.data?.map((sub) => (
+              <li key={sub.id}>
+                <label className={subId === sub.id ? 'pill-label active' : 'pill-label'}>
+                  <input type="radio" checked={subId === sub.id} onChange={() => selectSub(sub.id)} />
+                  {sub.name}
+                </label>
+              </li>
+            ))}
+          </ul>
         )}
-      </p>
 
-      <table>
-        <thead>
-          <tr>
-            <th>품목명</th>
-            <th>분류</th>
-            <th>KS규격</th>
-            <th>인증정보</th>
-            <th>상태</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {data?.content.map((item) => (
-            <tr key={item.id}>
-              <td>{item.name}</td>
-              <td>{categoryLabel(item.categorySubId)}</td>
-              <td>{item.ksStandard ?? '-'}</td>
-              <td>{item.certifications.map((c) => c.name).join(', ') || '-'}</td>
-              <td>{item.active ? '활성' : '비활성'}</td>
-              <td>
-                <Link to={`/items/${item.id}`}>상세</Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div className="breadcrumb-bar">
+          <span>
+            {selectedMainName
+              ? selectedSubName
+                ? `${selectedMainName} > ${selectedSubName}`
+                : selectedMainName
+              : '전체 품목'}
+          </span>
+          {mainId !== null && (
+            <button type="button" onClick={() => selectMain(null)}>
+              분류 초기화
+            </button>
+          )}
+        </div>
+      </div>
+
+      <ul className="item-grid">
+        {data?.content.map((item) => (
+          <li key={item.id} className="item-card">
+            <div className="item-card-thumb">{item.name.charAt(0)}</div>
+            <div className="item-card-body">
+              <span className="item-card-category">{categoryLabel(item.categorySubId)}</span>
+              <h3>{item.name}</h3>
+              <span className="item-card-meta">KS규격: {item.ksStandard ?? '-'}</span>
+              <span className="item-card-meta">
+                인증정보: {item.certifications.map((c) => c.name).join(', ') || '-'}
+              </span>
+              <span className={item.active ? 'badge badge-success' : 'badge badge-neutral'}>
+                {item.active ? '활성' : '비활성'}
+              </span>
+              <div className="item-card-footer">
+                <Link to={`/items/${item.id}`}>상세보기</Link>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <div className="pagination">
         <button type="button" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>

@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Layout() {
@@ -18,13 +18,13 @@ export default function Layout() {
         </Link>
         {isAuthenticated && (
           <nav>
-            <Link to="/partners">거래처</Link>
-            <Link to="/categories">카테고리</Link>
-            <Link to="/items">품목</Link>
-            <Link to="/purchases">매입</Link>
-            <Link to="/sales">매출</Link>
-            <Link to="/payments">결제</Link>
-            <Link to="/company-info">회사정보</Link>
+            <NavLink to="/partners">거래처</NavLink>
+            <NavLink to="/categories">카테고리</NavLink>
+            <NavLink to="/items">품목</NavLink>
+            <NavLink to="/purchases">매입</NavLink>
+            <NavLink to="/sales">매출</NavLink>
+            <NavLink to="/payments">결제</NavLink>
+            <NavLink to="/company-info">회사정보</NavLink>
             <span className="user-info">
               {user?.name} ({user?.role})
             </span>

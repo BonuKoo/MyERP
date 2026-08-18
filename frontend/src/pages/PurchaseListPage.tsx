@@ -1,8 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseList } from '../hooks/usePurchases';
+import type { PurchaseStatus } from '../types/api';
 
 const PAGE_SIZE = 20;
+
+const STATUS_LABEL: Record<PurchaseStatus, string> = {
+  DRAFT: '임시저장',
+  CONFIRMED: '확정',
+  CANCELED: '취소됨',
+};
+
+const STATUS_BADGE: Record<PurchaseStatus, string> = {
+  DRAFT: 'badge badge-neutral',
+  CONFIRMED: 'badge badge-success',
+  CANCELED: 'badge badge-danger',
+};
 
 export default function PurchaseListPage() {
   const [page, setPage] = useState(0);
@@ -39,7 +52,9 @@ export default function PurchaseListPage() {
               <td>{purchase.purchaseNo}</td>
               <td>{purchase.purchaseDate}</td>
               <td>{purchase.totalAmount.toLocaleString()}</td>
-              <td>{purchase.status}</td>
+              <td>
+                <span className={STATUS_BADGE[purchase.status]}>{STATUS_LABEL[purchase.status]}</span>
+              </td>
               <td>
                 <Link to={`/purchases/${purchase.id}`}>상세</Link>
               </td>

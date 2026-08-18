@@ -50,12 +50,17 @@ export default function PartnerListPage() {
               <td>{partner.contactPhone ?? '-'}</td>
               <td>{partner.receivableBalance.toLocaleString()}</td>
               <td>{partner.payableBalance.toLocaleString()}</td>
-              <td>{partner.active ? '활성' : '비활성'}</td>
+              <td>
+                <span className={partner.active ? 'badge badge-success' : 'badge badge-neutral'}>
+                  {partner.active ? '활성' : '비활성'}
+                </span>
+              </td>
               <td>
                 <Link to={`/partners/${partner.id}/edit`}>수정</Link>
                 {partner.active && (
                   <button
                     type="button"
+                    className="button-danger"
                     onClick={() => deactivateMutation.mutate(partner.id)}
                     disabled={deactivateMutation.isPending}
                   >

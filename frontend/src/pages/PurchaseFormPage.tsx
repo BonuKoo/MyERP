@@ -143,7 +143,7 @@ export default function PurchaseFormPage() {
   return (
     <div className="page">
       <h1>새 매입 전표 등록</h1>
-      <form onSubmit={handleSubmit}>
+      <form className="form-wide" onSubmit={handleSubmit}>
         <label>
           거래처
           <select
@@ -189,28 +189,30 @@ export default function PurchaseFormPage() {
         </label>
 
         <h3>매입 품목</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>품목</th>
-              <th>규격</th>
-              <th>수량</th>
-              <th>단가</th>
-              <th>금액</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((line, index) => (
-              <PurchaseItemRow
-                key={line.key}
-                line={line}
-                onChange={(next) => updateLine(index, next)}
-                onRemove={() => removeLine(index)}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>품목</th>
+                <th>규격</th>
+                <th>수량</th>
+                <th>단가</th>
+                <th>금액</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map((line, index) => (
+                <PurchaseItemRow
+                  key={line.key}
+                  line={line}
+                  onChange={(next) => updateLine(index, next)}
+                  onRemove={() => removeLine(index)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
         <button type="button" onClick={addLine}>
           품목 추가
         </button>

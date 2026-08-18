@@ -1,8 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSaleList } from '../hooks/useSales';
+import type { SaleStatus } from '../types/api';
 
 const PAGE_SIZE = 20;
+
+const STATUS_LABEL: Record<SaleStatus, string> = {
+  DRAFT: '임시저장',
+  CONFIRMED: '확정',
+  CANCELED: '취소됨',
+};
+
+const STATUS_BADGE: Record<SaleStatus, string> = {
+  DRAFT: 'badge badge-neutral',
+  CONFIRMED: 'badge badge-success',
+  CANCELED: 'badge badge-danger',
+};
 
 export default function SaleListPage() {
   const [page, setPage] = useState(0);
@@ -39,7 +52,9 @@ export default function SaleListPage() {
               <td>{sale.saleNo}</td>
               <td>{sale.saleDate}</td>
               <td>{sale.totalAmount.toLocaleString()}</td>
-              <td>{sale.status}</td>
+              <td>
+                <span className={STATUS_BADGE[sale.status]}>{STATUS_LABEL[sale.status]}</span>
+              </td>
               <td>
                 <Link to={`/sales/${sale.id}`}>상세</Link>
               </td>
