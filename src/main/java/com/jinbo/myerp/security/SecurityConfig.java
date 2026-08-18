@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,6 +40,12 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // 품목 사진 바이너리만 공개. 브라우저의 <img src>는 Authorization
+                        // 헤더를 붙일 수 없어서 인증을 걸면 프론트의 사진이 전부 깨진다.
+                        // 패턴에 세그먼트가 하나 더 있어야 매칭되므로 메타데이터 목록
+                        // (/api/items/{id}/images)은 인증이 그대로 유지되고, GET으로
+                        // 한정했으므로 업로드/삭제/대표지정도 인증이 필요하다.
+                        .requestMatchers(HttpMethod.GET, "/api/items/*/images/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

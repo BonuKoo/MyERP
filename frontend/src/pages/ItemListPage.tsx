@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { itemImageUrl } from '../api/item';
 import { useAllCategorySubs, useCategoryMains, useCategorySubs } from '../hooks/useCategories';
 import { useItemList } from '../hooks/useItems';
 
@@ -125,18 +126,31 @@ export default function ItemListPage() {
       <ul className="item-grid">
         {data?.content.map((item) => (
           <li key={item.id} className="item-card">
-            <div className="item-card-thumb">{item.name.charAt(0)}</div>
-            <div className="item-card-body">
-              <span className="item-card-category">{categoryLabel(item.categorySubId)}</span>
+            {/*
+              참고 사이트처럼 품목명이 위, 사진이 아래에 온다. 목록 응답의 images에는
+              대표 사진 1장만 담겨 오고(백엔드가 배치로 붙여준다), 사진이 없는 품목은
+              첫 글자 플레이스홀더로 대신한다 — ERP라 사진 없는 품목이 정상적으로 있다.
+            */}
+            <div className="item-card-head">
               <h3>{item.name}</h3>
+              <span className="item-card-category">{categoryLabel(item.categorySubId)}</span>
+            </div>
+            <Link to={`/items/${item.id}`} className="item-card-thumb">
+              {item.images.length > 0 ? (
+                <img src={itemImageUrl(item.id, item.images[0].id, 'thumb')} alt={item.name} />
+              ) : (
+                <span className="item-card-thumb-placeholder">{item.name.charAt(0)}</span>
+              )}
+            </Link>
+            <div className="item-card-body">
               <span className="item-card-meta">KS규격: {item.ksStandard ?? '-'}</span>
               <span className="item-card-meta">
                 인증정보: {item.certifications.map((c) => c.name).join(', ') || '-'}
               </span>
-              <span className={item.active ? 'badge badge-success' : 'badge badge-neutral'}>
-                {item.active ? '활성' : '비활성'}
-              </span>
               <div className="item-card-footer">
+                <span className={item.active ? 'badge badge-success' : 'badge badge-neutral'}>
+                  {item.active ? '활성' : '비활성'}
+                </span>
                 <Link to={`/items/${item.id}`}>상세보기</Link>
               </div>
             </div>

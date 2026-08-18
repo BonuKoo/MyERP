@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useItemDetail, useItemSpecMutations, useItemSpecs } from '../hooks/useItems';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useItemDetail, useItemImageMutations, useItemSpecMutations, useItemSpecs } from '../hooks/useItems';
 import { useStockAdjustMutation, useStockHistory } from '../hooks/useStock';
+import { itemImageUrl } from '../api/item';
 import type { ItemSpecRequest } from '../types/api';
 
 const emptySpecForm: ItemSpecRequest = {
@@ -22,10 +23,13 @@ export default function ItemDetailPage() {
   const specsQuery = useItemSpecs(itemId);
   const { createSpecMutation } = useItemSpecMutations(itemId);
   const stockAdjustMutation = useStockAdjustMutation(itemId);
+  const { deleteMutation: deleteImageMutation, setPrimaryMutation } = useItemImageMutations(itemId);
 
   const [specForm, setSpecForm] = useState<ItemSpecRequest>(emptySpecForm);
   const [adjustDeltas, setAdjustDeltas] = useState<Record<number, string>>({});
   const [historySpecId, setHistorySpecId] = useState<number | null>(null);
+  // 갤러리에서 크게 보여줄 사진. null이면 대표(=목록의 첫 장)를 쓴다.
+  const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
 
   const historyQuery = useStockHistory(historySpecId, 0, 10);
 
@@ -50,17 +54,83 @@ export default function ItemDetailPage() {
   }
 
   const item = itemQuery.data;
+  const images = item.images;
+  // 선택한 사진이 방금 삭제됐을 수 있으므로 항상 현재 목록에서 다시 찾는다.
+  const mainImage = images.find((img) => img.id === selectedImageId) ?? images[0];
 
   return (
     <div className="page">
       <div className="page-header">
         <h1>{item.name}</h1>
-        <button type="button" onClick={() => navigate('/items')}>
-          목록으로
-        </button>
+        <div className="form-actions">
+          <Link to={`/items/${itemId}/edit`}>
+            <button type="button">수정</button>
+          </Link>
+          <button type="button" onClick={() => navigate('/items')}>
+            목록으로
+          </button>
+        </div>
       </div>
-      <p>KS규격: {item.ksStandard ?? '-'}</p>
-      <p>인증정보: {item.certifications.map((c) => c.name).join(', ') || '-'}</p>
+
+      {/* 참고 사이트 상세처럼 큰 사진 왼쪽, 정보 오른쪽. 사진이 없으면 정보만 보인다. */}
+      <div className="item-detail-top">
+        {images.length > 0 && (
+          <div className="item-gallery">
+            <div className="item-gallery-main">
+              <img src={itemImageUrl(itemId, mainImage.id)} alt={item.name} />
+            </div>
+            {images.length > 1 && (
+              <ul className="item-gallery-thumbs">
+                {images.map((image) => (
+                  <li key={image.id}>
+                    <button
+                      type="button"
+                      className={image.id === mainImage.id ? 'selected' : ''}
+                      onClick={() => setSelectedImageId(image.id)}
+                    >
+                      <img src={itemImageUrl(itemId, image.id, 'thumb')} alt={image.uploadFileName} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="item-gallery-actions">
+              {!mainImage.primary && (
+                <button
+                  type="button"
+                  onClick={() => setPrimaryMutation.mutate(mainImage.id)}
+                  disabled={setPrimaryMutation.isPending}
+                >
+                  대표 사진으로 지정
+                </button>
+              )}
+              {mainImage.primary && <span className="badge badge-success">대표 사진</span>}
+              <button
+                type="button"
+                className="button-danger"
+                onClick={() => {
+                  deleteImageMutation.mutate(mainImage.id);
+                  setSelectedImageId(null);
+                }}
+                disabled={deleteImageMutation.isPending}
+              >
+                이 사진 삭제
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="item-detail-info">
+          <p>KS규격: {item.ksStandard ?? '-'}</p>
+          <p>인증정보: {item.certifications.map((c) => c.name).join(', ') || '-'}</p>
+          <p>설명: {item.description ?? '-'}</p>
+          {images.length === 0 && (
+            <p className="form-hint">
+              등록된 사진이 없습니다. <Link to={`/items/${itemId}/edit`}>수정 화면</Link>에서 추가할 수 있습니다.
+            </p>
+          )}
+        </div>
+      </div>
 
       <h2>규격 목록</h2>
       <table>

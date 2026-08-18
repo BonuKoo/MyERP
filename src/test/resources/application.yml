@@ -29,3 +29,9 @@ mybatis:
 jwt:
   secret: test-only-secret-key-not-for-production-0123456789
   expiration-ms: 3600000
+
+# 이 파일이 main 쪽 application.yml을 통째로 가리므로 file.dir도 여기에 다시 둬야
+# 전체 컨텍스트를 띄우는 테스트에서 FileStore 빈 주입이 실패하지 않는다.
+# 실제 업로드 폴더가 아니라 build/ 아래로 보내 테스트가 개발 파일을 건드리지 않게 한다.
+file:
+  dir: build/test-uploads/

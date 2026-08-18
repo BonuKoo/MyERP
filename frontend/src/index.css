@@ -466,19 +466,50 @@ button:disabled {
   transform: translateY(-2px);
 }
 
+.item-card-head {
+  padding: 0.9rem 1rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item-card-head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+/* 사진이 있으면 <img>가, 없으면 첫 글자 플레이스홀더가 같은 자리를 채운다. */
 .item-card-thumb {
-  height: 96px;
+  height: 150px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--color-surface);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.item-card-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-card-thumb-placeholder {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   background: var(--color-primary-soft);
   color: var(--color-primary);
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 800;
 }
 
 .item-card-body {
-  padding: 0.9rem 1rem 1.1rem;
+  padding: 0.6rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -488,11 +519,6 @@ button:disabled {
 .item-card-category {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-}
-
-.item-card-body h3 {
-  margin: 0;
-  font-size: 0.98rem;
 }
 
 .item-card-meta {
@@ -517,6 +543,143 @@ button:disabled {
 
 .item-card-footer a:hover {
   text-decoration: underline;
+}
+
+/* 품목 상세: 참고 사이트처럼 큰 사진 왼쪽 + 정보 오른쪽. 좁은 화면에선 세로로 쌓인다. */
+.item-detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.item-gallery {
+  flex: 0 0 340px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.item-gallery-main {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.item-gallery-main img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-gallery-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.item-gallery-thumbs button {
+  padding: 0;
+  width: 60px;
+  height: 60px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-gallery-thumbs button:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.item-gallery-thumbs button.selected {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary-soft);
+}
+
+.item-gallery-thumbs img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-gallery-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.item-detail-info {
+  flex: 1;
+  min-width: 260px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.item-detail-info p {
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* 수정 화면의 기존 사진 목록과, 업로드 전 로컬 미리보기 */
+.image-edit-list,
+.image-preview-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.image-edit-list li,
+.image-preview-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 110px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.image-edit-list img,
+.image-preview-list img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.image-preview-list li span {
+  overflow-wrap: anywhere;
 }
 
 .category-columns {

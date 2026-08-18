@@ -54,6 +54,7 @@ export default function App() {
                 <Route path="/items" element={<ItemListPage />} />
                 <Route path="/items/new" element={<ItemFormPage />} />
                 <Route path="/items/:id" element={<ItemDetailPage />} />
+                <Route path="/items/:id/edit" element={<ItemFormPage />} />
                 <Route path="/company-info" element={<CompanyInfoPage />} />
                 <Route path="/purchases" element={<PurchaseListPage />} />
                 <Route path="/purchases/new" element={<PurchaseFormPage />} />

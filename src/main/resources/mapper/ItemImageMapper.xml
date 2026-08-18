@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.ItemImageMapper">
+
+    <!--
+        map-underscore-to-camel-case가 켜져 있어도 boolean은 자동 매핑되지 않으므로
+        is_primary -> primary를 명시적으로 잡아준다(계층 설계 원칙 1).
+    -->
+    <resultMap id="itemImageResultMap" type="com.jinbo.myerp.domain.ItemImage">
+        <id property="id" column="id"/>
+        <result property="itemId" column="item_id"/>
+        <result property="uploadFileName" column="upload_file_name"/>
+        <result property="storeFileName" column="store_file_name"/>
+        <result property="filePath" column="file_path"/>
+        <result property="fileType" column="file_type"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="displayOrder" column="display_order"/>
+        <result property="primary" column="is_primary"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, item_id, upload_file_name, store_file_name, file_path, file_type, file_size,
+        display_order, is_primary, created_at
+    </sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.ItemImage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO item_image (item_id, upload_file_name, store_file_name, file_path, file_type, file_size,
+                                display_order, is_primary, created_at)
+        VALUES (#{itemId}, #{uploadFileName}, #{storeFileName}, #{filePath}, #{fileType}, #{fileSize},
+                #{displayOrder}, #{primary}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="itemImageResultMap">
+        SELECT <include refid="columns"/>
+        FROM item_image
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByItemId" resultMap="itemImageResultMap">
+        SELECT <include refid="columns"/>
+        FROM item_image
+        WHERE item_id = #{itemId}
+        ORDER BY display_order, id
+    </select>
+
+    <!--
+        빈 목록이 들어오면 IN ()이 되어 SQL 문법 오류가 나므로 <if>로 막는다.
+        (품목이 하나도 없는 페이지를 조회할 때 실제로 발생할 수 있다.)
+    -->
+    <select id="findPrimaryByItemIds" resultMap="itemImageResultMap">
+        SELECT <include refid="columns"/>
+        FROM item_image
+        WHERE is_primary = TRUE
+        <if test="itemIds != null and !itemIds.isEmpty()">
+            AND item_id IN
+            <foreach item="itemId" collection="itemIds" open="(" separator="," close=")">
+                #{itemId}
+            </foreach>
+        </if>
+        <if test="itemIds == null or itemIds.isEmpty()">
+            AND 1 = 0
+        </if>
+    </select>
+
+    <select id="findMaxDisplayOrder" resultType="java.lang.Integer">
+        SELECT MAX(display_order)
+        FROM item_image
+        WHERE item_id = #{itemId}
+    </select>
+
+    <update id="clearPrimary">
+        UPDATE item_image
+        SET is_primary = FALSE
+        WHERE item_id = #{itemId}
+    </update>
+
+    <update id="markPrimary">
+        UPDATE item_image
+        SET is_primary = TRUE
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM item_image
+        WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByItemId">
+        DELETE FROM item_image
+        WHERE item_id = #{itemId}
+    </delete>
+
+</mapper>

@@ -113,6 +113,16 @@ export interface ItemRequest {
   certificationIds?: number[];
 }
 
+export interface ItemImageResponse {
+  id: number;
+  uploadFileName: string;
+  fileType: string;
+  fileSize: number;
+  displayOrder: number;
+  primary: boolean;
+  createdAt: string;
+}
+
 export interface ItemResponse {
   id: number;
   categorySubId: number;
@@ -123,6 +133,12 @@ export interface ItemResponse {
   createdAt: string;
   updatedAt: string;
   certifications: CertificationResponse[];
+  /**
+   * 단건 조회는 전체 사진, 목록 조회는 카드에 쓸 대표 사진 1장만 담긴다
+   * (목록에서 품목마다 전체 사진을 싣는 건 낭비라 백엔드가 그렇게 내려준다).
+   * 사진이 없으면 빈 배열.
+   */
+  images: ItemImageResponse[];
 }
 
 export interface ItemSpecRequest {
