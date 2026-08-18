@@ -14,6 +14,12 @@ interface AuthState {
   token: string | null;
   user: AuthUser | null;
   isAuthenticated: boolean;
+  /**
+   * 결제·전표취소·마스터데이터·계정생성은 OWNER만 할 수 있다(백엔드 SecurityConfig).
+   * 화면에서 이 값으로 버튼을 감추는 건 어디까지나 UX다 — 실제 차단은 백엔드가 403으로
+   * 하므로, 이 플래그를 우회해도 서버가 막는다.
+   */
+  isOwner: boolean;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
 }
@@ -49,7 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ token, user, isAuthenticated: token !== null, login, logout }),
+    () => ({
+      token,
+      user,
+      isAuthenticated: token !== null,
+      isOwner: user?.role === 'OWNER',
+      login,
+      logout,
+    }),
     [token, user, login, logout],
   );
 

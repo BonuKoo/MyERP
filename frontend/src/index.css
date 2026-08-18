@@ -25,6 +25,19 @@
   box-sizing: border-box;
 }
 
+/*
+ * 폼 컨트롤은 페이지 폰트를 상속하지 않고 브라우저 기본값(Arial 등)을 쓴다.
+ * 그대로 두면 본문·링크는 system-ui인데 버튼과 입력창만 다른 폰트로 그려지고,
+ * 폰트가 다르면 line-height: normal의 계산 결과도 달라져 나란히 놓은 버튼과
+ * 버튼처럼 꾸민 링크의 높이가 어긋난다(실제로 40px vs 38px 차이가 났다).
+ */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 body {
   margin: 0;
   color: var(--color-text);
@@ -280,6 +293,38 @@ button:disabled {
 
 .button-danger:hover:not(:disabled) {
   background: var(--color-danger-soft);
+}
+
+.button-success {
+  background: var(--color-surface);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.button-success:hover:not(:disabled) {
+  background: var(--color-success-soft);
+}
+
+/*
+ * 링크를 버튼과 같은 모양으로 보이게 한다. <a> 안에 <button>을 넣는 방법도 있지만
+ * 그건 유효하지 않은 HTML이라(앵커는 상호작용 요소를 품을 수 없다) 앵커 자체에
+ * 버튼 모양을 준다. border는 shorthand 대신 width/style만 지정해야 위 색상 규칙의
+ * border-color가 덮이지 않는다(shorthand가 specificity로 이겨버린다).
+ */
+a.button-success,
+a.button-danger {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  /* 버튼의 UA 기본값과 같아야 나란히 놓았을 때 높이가 어긋나지 않는다
+     (1.2를 줬더니 버튼 40px, 링크 36px로 4px 차이가 났다) */
+  line-height: normal;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .auth-page {
@@ -705,17 +750,44 @@ button:disabled {
   gap: 0.3rem;
 }
 
-.category-list button {
+/*
+ * 대분류(선택 가능한 button)와 중분류(단순 표시)가 같은 모양이 되도록 공통 박스를
+ * 쓴다. 예전엔 중분류가 스타일 없는 맨 <li> 텍스트라 두 열이 전혀 달라 보였다.
+ * 다만 중분류는 클릭 대상이 아니므로 커서와 hover로만 그 차이를 남긴다 —
+ * 똑같이 반응하게 만들면 누를 수 있는 것처럼 오해하게 된다.
+ */
+.category-item {
+  display: block;
   width: 100%;
   text-align: left;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-soft);
   color: var(--color-text);
-  border: 1px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
-.category-list button.selected {
+button.category-item:hover:not(.selected) {
+  background: var(--color-neutral-soft);
+  border-color: var(--color-primary);
+}
+
+button.category-item.selected {
   background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
+}
+
+span.category-item {
+  cursor: default;
+}
+
+.category-list-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
 }
 
 .inline-form {

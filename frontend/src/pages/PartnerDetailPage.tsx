@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { usePartnerDetail } from '../hooks/usePartners';
 import { usePartnerLedger } from '../hooks/usePartnerLedger';
 import { usePaymentMutations } from '../hooks/usePayments';
+import { useAuth } from '../auth/AuthContext';
 import type { LedgerChangeType, LedgerEntryResponse } from '../types/api';
 
 const PAGE_SIZE = 20;
@@ -57,6 +58,7 @@ export default function PartnerDetailPage() {
   const partnerQuery = usePartnerDetail(partnerId);
   const ledgerQuery = usePartnerLedger(partnerId, page, PAGE_SIZE);
   const { cancelMutation } = usePaymentMutations();
+  const { isOwner } = useAuth();
 
   // 조기 return보다 먼저 호출해야 훅 호출 순서가 렌더마다 일정하게 유지된다.
   const ledger = ledgerQuery.data;
@@ -100,12 +102,19 @@ export default function PartnerDetailPage() {
             <td>{partner.receivableBalance.toLocaleString()}</td>
             <td>{partner.payableBalance.toLocaleString()}</td>
             <td>
-              <Link to={`/partners/${partnerId}/payments/new?type=RECEIPT`}>
-                <button type="button">수금 등록</button>
-              </Link>
-              <Link to={`/partners/${partnerId}/payments/new?type=DISBURSEMENT`}>
-                <button type="button">지급 등록</button>
-              </Link>
+              {/* 수금/지급은 돈이 오가므로 OWNER 전용(백엔드도 403으로 막는다) */}
+              {isOwner ? (
+                <>
+                  <Link to={`/partners/${partnerId}/payments/new?type=RECEIPT`}>
+                    <button type="button">수금 등록</button>
+                  </Link>
+                  <Link to={`/partners/${partnerId}/payments/new?type=DISBURSEMENT`}>
+                    <button type="button">지급 등록</button>
+                  </Link>
+                </>
+              ) : (
+                <span className="form-hint">수금/지급 등록은 사업주만 가능합니다.</span>
+              )}
             </td>
           </tr>
         </tbody>
@@ -136,7 +145,8 @@ export default function PartnerDetailPage() {
                   <td>{entry.amount.toLocaleString()}</td>
                   <td>{entry.balanceAfter.toLocaleString()}</td>
                   <td>
-                    {isCancelablePayment(entry.changeType) &&
+                    {isOwner &&
+                      isCancelablePayment(entry.changeType) &&
                       entry.relatedDocumentId &&
                       !alreadyCanceledPaymentIds.has(entry.relatedDocumentId) && (
                         <button

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePartnerList, usePartnerMutations } from '../hooks/usePartners';
+import { useAuth } from '../auth/AuthContext';
 
 const PAGE_SIZE = 20;
 
@@ -8,6 +9,7 @@ export default function PartnerListPage() {
   const [page, setPage] = useState(0);
   const partnersQuery = usePartnerList(page, PAGE_SIZE);
   const { deactivateMutation } = usePartnerMutations();
+  const { isOwner } = useAuth();
 
   if (partnersQuery.isLoading) return <p>불러오는 중...</p>;
   if (partnersQuery.isError) {
@@ -56,8 +58,12 @@ export default function PartnerListPage() {
                 </span>
               </td>
               <td>
-                <Link to={`/partners/${partner.id}/edit`}>수정</Link>
-                {partner.active && (
+                {/* 옆의 비활성화 버튼과 같은 모양(외곽선 버튼)이되 성격이 달라 색만 구분한다 */}
+                <Link to={`/partners/${partner.id}/edit`} className="button-success">
+                  수정
+                </Link>
+                {/* 거래처 비활성화는 OWNER 전용(백엔드도 403으로 막는다) */}
+                {partner.active && isOwner && (
                   <button
                     type="button"
                     className="button-danger"
