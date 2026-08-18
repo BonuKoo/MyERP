@@ -32,10 +32,14 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Operation(summary = "회원가입", description = "회사 사용자(OWNER/STAFF)를 등록한다.")
+    @Operation(summary = "회원가입", description = "회사 사용자(OWNER/STAFF)를 등록한다. " +
+            "계정 생성은 사업주(OWNER)만 할 수 있다 — 단, 사용자가 한 명도 없는 최초 상태에서는 " +
+            "최초 OWNER를 만들 수 있도록 인증 없이 허용한다.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "가입 성공"),
             @ApiResponse(responseCode = "400", description = "요청값 검증 실패",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "이미 사용자가 있는데 OWNER가 아닌 주체가 호출",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
