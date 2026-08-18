@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -83,6 +85,20 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(HttpStatus.PAYLOAD_TOO_LARGE, "업로드 가능한 파일 크기를 초과했습니다."));
     }
 
+    /**
+     * 요청 본문 자체를 읽을 수 없는 경우(깨진 JSON, 잘못된 인코딩, 필드 타입 불일치).
+     * 클라이언트가 보낸 값의 문제이므로 400이다. 이 핸들러가 없으면 Exception.class
+     * catch-all에 걸려 500이 나가고, 5xx를 서버 결함 지표로 쓰는 전제가 깨진다.
+     *
+     * <p>파싱 실패 원인은 내부 구현(Jackson) 메시지라 그대로 노출하지 않는다.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
+        log.warn("읽을 수 없는 요청 본문: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, "요청 본문을 읽을 수 없습니다."));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
@@ -90,6 +106,19 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("잘못된 요청입니다.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(HttpStatus.BAD_REQUEST, message));
+    }
+
+    /**
+     * 권한 부족(403). SecurityConfig의 URL 패턴 단계에서 거부된 경우는 필터에서
+     * accessDeniedHandler가 처리하므로 여기 오지 않는다. 이 핸들러가 필요한 건
+     * 컨트롤러/서비스가 직접 던진 AccessDeniedException(예: 회원가입 권한 검사)이다 —
+     * 그건 DispatcherServlet 안에서 발생하므로 아래 Exception.class catch-all이
+     * 먼저 삼켜서 403이 500으로 둔갑한다. 더 구체적인 타입이라 catch-all보다 먼저 매칭된다.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of(HttpStatus.FORBIDDEN, e.getMessage()));
     }
 
     /**
