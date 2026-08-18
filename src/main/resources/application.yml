@@ -3,6 +3,12 @@ spring:
     name: myerp
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  servlet:
+    multipart:
+      # 품목 사진 업로드 한도. 스마트폰 사진 한 장이 보통 3~5MB라 여유를 두고,
+      # 요청 전체(여러 장 동시 업로드)는 그 4배까지만 받는다.
+      max-file-size: 5MB
+      max-request-size: 20MB
   datasource:
     url: jdbc:mysql://localhost:3306/erp_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: erp_user
@@ -49,3 +55,8 @@ logging:
 jwt:
   secret: ${JWT_SECRET:local-dev-only-secret-key-please-change-0123456789abcdef}
   expiration-ms: 86400000
+
+# 품목 사진 저장 위치. 리포지토리 바깥이어야 한다 — 업로드물이 git에 섞이면
+# 저장소가 무거워지고 브랜치를 옮길 때마다 파일이 사라진다.
+file:
+  dir: ${FILE_DIR:F:/Project/myerp-uploads/}
