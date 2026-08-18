@@ -58,7 +58,10 @@ export default function PartnerListPage() {
                 </span>
               </td>
               <td>
-                <Link to={`/partners/${partner.id}/edit`}>수정</Link>
+                {/* 옆의 비활성화 버튼과 같은 모양(외곽선 버튼)이되 성격이 달라 색만 구분한다 */}
+                <Link to={`/partners/${partner.id}/edit`} className="button-success">
+                  수정
+                </Link>
                 {/* 거래처 비활성화는 OWNER 전용(백엔드도 403으로 막는다) */}
                 {partner.active && isOwner && (
                   <button

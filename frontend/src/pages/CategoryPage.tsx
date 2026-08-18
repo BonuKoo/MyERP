@@ -42,7 +42,9 @@ export default function CategoryPage() {
               <li key={main.id}>
                 <button
                   type="button"
-                  className={main.id === selectedMainId ? 'selected' : ''}
+                  className={
+                    main.id === selectedMainId ? 'category-item selected' : 'category-item'
+                  }
                   onClick={() => setSelectedMainId(main.id)}
                 >
                   {main.name}
@@ -50,6 +52,9 @@ export default function CategoryPage() {
               </li>
             ))}
           </ul>
+          {mainsQuery.data?.length === 0 && (
+            <p className="category-list-empty">등록된 대분류가 없습니다.</p>
+          )}
           {/* 분류 체계는 마스터 데이터라 등록은 OWNER 전용(백엔드도 403으로 막는다) */}
           {isOwner && (
             <form onSubmit={handleCreateMain} className="inline-form">
@@ -74,9 +79,14 @@ export default function CategoryPage() {
             <>
               <ul className="category-list">
                 {subsQuery.data?.map((sub) => (
-                  <li key={sub.id}>{sub.name}</li>
+                  <li key={sub.id}>
+                    <span className="category-item">{sub.name}</span>
+                  </li>
                 ))}
               </ul>
+              {subsQuery.data?.length === 0 && (
+                <p className="category-list-empty">등록된 중분류가 없습니다.</p>
+              )}
               {isOwner && (
                 <form onSubmit={handleCreateSub} className="inline-form">
                   <input
