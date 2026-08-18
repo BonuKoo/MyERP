@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createItem, createItemSpec, fetchItem, fetchItemSpecs, fetchItems } from '../api/item';
+import {
+  createItem,
+  createItemSpec,
+  deleteItemImage,
+  fetchItem,
+  fetchItemSpecs,
+  fetchItems,
+  setPrimaryItemImage,
+  updateItem,
+  uploadItemImages,
+} from '../api/item';
 import type { ItemRequest, ItemSpecRequest } from '../types/api';
 
 export const ITEMS_QUERY_KEY = ['items'] as const;
@@ -41,7 +51,39 @@ export function useItemMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ITEMS_QUERY_KEY }),
   });
 
-  return { createMutation };
+  const updateMutation = useMutation({
+    mutationFn: ({ id, request }: { id: number; request: ItemRequest }) => updateItem(id, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ITEMS_QUERY_KEY }),
+  });
+
+  return { createMutation, updateMutation };
+}
+
+/**
+ * 사진을 바꾸면 상세(전체 사진)와 목록(대표 사진 썸네일)이 모두 달라지므로
+ * items 쿼리 전체를 무효화한다.
+ */
+export function useItemImageMutations(itemId: number) {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ITEMS_QUERY_KEY });
+
+  const uploadMutation = useMutation({
+    mutationFn: (files: File[]) => uploadItemImages(itemId, files),
+    onSuccess: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (imageId: number) => deleteItemImage(itemId, imageId),
+    onSuccess: invalidate,
+  });
+
+  const setPrimaryMutation = useMutation({
+    mutationFn: (imageId: number) => setPrimaryItemImage(itemId, imageId),
+    onSuccess: invalidate,
+  });
+
+  return { uploadMutation, deleteMutation, setPrimaryMutation };
 }
 
 export function useItemSpecMutations(itemId: number) {

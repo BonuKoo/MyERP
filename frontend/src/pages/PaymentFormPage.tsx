@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { AxiosError, FormEvent } from 'react';
+import type { FormEvent } from 'react';
+import type { AxiosError } from 'axios';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { usePartnerDetail } from '../hooks/usePartners';
 import { usePaymentMutations } from '../hooks/usePayments';
