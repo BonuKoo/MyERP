@@ -5,10 +5,15 @@ import type { ItemRequest, ItemSpecRequest } from '../types/api';
 export const ITEMS_QUERY_KEY = ['items'] as const;
 export const ITEM_SPECS_QUERY_KEY = ['itemSpecs'] as const;
 
-export function useItemList(page: number, size: number) {
+export function useItemList(
+  page: number,
+  size: number,
+  categoryMainId?: number | null,
+  categorySubId?: number | null,
+) {
   return useQuery({
-    queryKey: [...ITEMS_QUERY_KEY, page, size],
-    queryFn: () => fetchItems(page, size),
+    queryKey: [...ITEMS_QUERY_KEY, page, size, categoryMainId ?? null, categorySubId ?? null],
+    queryFn: () => fetchItems(page, size, categoryMainId, categorySubId),
   });
 }
 

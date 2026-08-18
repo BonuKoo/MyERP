@@ -7,8 +7,20 @@ import type {
   PageResponse,
 } from '../types/api';
 
-export async function fetchItems(page: number, size: number): Promise<PageResponse<ItemResponse>> {
-  const { data } = await client.get<PageResponse<ItemResponse>>('/api/items', { params: { page, size } });
+export async function fetchItems(
+  page: number,
+  size: number,
+  categoryMainId?: number | null,
+  categorySubId?: number | null,
+): Promise<PageResponse<ItemResponse>> {
+  const { data } = await client.get<PageResponse<ItemResponse>>('/api/items', {
+    params: {
+      page,
+      size,
+      categoryMainId: categoryMainId ?? undefined,
+      categorySubId: categorySubId ?? undefined,
+    },
+  });
   return data;
 }
 
