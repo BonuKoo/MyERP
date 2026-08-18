@@ -7,7 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -64,16 +63,13 @@ class ActuatorMetricsExposureTest {
      * 설정값·빈 목록이 통째로 드러나는 엔드포인트는 부하 측정에 필요 없으므로
      * 열지 않는다 — 인증이 걸려 있어도 노출 범위 자체를 좁혀둔다.
      *
-     * 검증은 "200이 아님"으로 한다. 매핑이 없으면 404여야 맞지만, 현재
-     * GlobalExceptionHandler의 Exception.class catch-all이 NoResourceFoundException까지
-     * 잡아서 500이 나온다(이 테스트를 작성하다 발견, 별도 이슈로 분리). 여기서
-     * 지켜야 할 성질은 "env 데이터가 나오지 않는다"이므로 상태코드를 404로 못박지
-     * 않는다 — 그 결함이 고쳐지면 404가 되고, 이 테스트는 그대로 통과한다.
+     * 매핑되지 않은 경로이므로 404가 정상이다(GlobalExceptionHandlerTest 참고 —
+     * 이 테스트를 작성하다 매핑 없는 URL이 500을 반환하던 결함을 발견해 고쳤다).
      */
     @Test
     @WithMockUser
     void env_isNotExposed() throws Exception {
         mockMvc.perform(get("/actuator/env"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(200));
+                .andExpect(status().isNotFound());
     }
 }
