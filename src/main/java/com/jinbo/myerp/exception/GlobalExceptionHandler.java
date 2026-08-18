@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -51,6 +52,7 @@ public class GlobalExceptionHandler {
             CategoryMainNotFoundException.class,
             CategorySubNotFoundException.class,
             ItemNotFoundException.class,
+            ItemImageNotFoundException.class,
             ItemSpecNotFoundException.class,
             CompanyInfoNotFoundException.class,
             PurchaseNotFoundException.class,
@@ -59,6 +61,26 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
+    }
+
+    /**
+     * 업로드 파일이 비었거나 허용되지 않는 형식/확장자인 경우. 사용자 입력 문제이므로
+     * 400이다 — 이 핸들러가 없으면 아래 Exception.class catch-all에 잡혀 500이 되고,
+     * 클라이언트가 "내 파일이 문제"인지 "서버가 고장"인지 구분할 수 없게 된다.
+     */
+    @ExceptionHandler(InvalidImageFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidImageFile(InvalidImageFileException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+
+    /**
+     * application.yml의 multipart 크기 제한을 넘긴 업로드. 스프링이 서블릿 레벨에서
+     * 던지므로 컨트롤러에 도달하지 못한다.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ErrorResponse.of(HttpStatus.PAYLOAD_TOO_LARGE, "업로드 가능한 파일 크기를 초과했습니다."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
