@@ -72,13 +72,24 @@ class ItemServiceTest {
     @Test
     void findAll_returnsPageResult() {
         List<Item> items = List.of(Item.builder().id(1L).name("a").build());
-        given(itemMapper.findAll(0, 20)).willReturn(items);
-        given(itemMapper.countAll()).willReturn(1);
+        given(itemMapper.findAll(0, 20, null, null)).willReturn(items);
+        given(itemMapper.countAll(null, null)).willReturn(1);
 
-        PageResult<Item> result = itemService.findAll(0, 20);
+        PageResult<Item> result = itemService.findAll(0, 20, null, null);
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.totalCount()).isEqualTo(1);
+    }
+
+    @Test
+    void findAll_withCategoryFilter_passesFilterToMapper() {
+        given(itemMapper.findAll(0, 20, 1L, 2L)).willReturn(List.of());
+        given(itemMapper.countAll(1L, 2L)).willReturn(0);
+
+        itemService.findAll(0, 20, 1L, 2L);
+
+        verify(itemMapper).findAll(0, 20, 1L, 2L);
+        verify(itemMapper).countAll(1L, 2L);
     }
 
     @Test

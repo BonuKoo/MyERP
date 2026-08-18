@@ -26,22 +26,40 @@
         WHERE id = #{id}
     </select>
 
+    <!--
+        categoryMainId/categorySubId는 둘 다 선택값이다. item은 category_sub_id를 항상 갖고
+        있으므로(NOT NULL) join은 조건 없이 걸고, <where>가 두 <if>의 결과를 알아서
+        WHERE/AND로 조립한다 — 대분류만 고르면(중분류 미선택) 그 아래 모든 중분류의
+        품목이, 중분류까지 고르면 그 중분류의 품목만 나온다.
+    -->
     <select id="findAll" resultMap="itemResultMap">
-        SELECT id, category_sub_id, name, description, ks_standard, is_active, created_at, updated_at
-        FROM item
-        ORDER BY id DESC
+        SELECT i.id, i.category_sub_id, i.name, i.description, i.ks_standard, i.is_active, i.created_at, i.updated_at
+        FROM item i
+        JOIN category_sub cs ON cs.id = i.category_sub_id
+        <where>
+            <if test="categorySubId != null">
+                AND i.category_sub_id = #{categorySubId}
+            </if>
+            <if test="categoryMainId != null">
+                AND cs.category_main_id = #{categoryMainId}
+            </if>
+        </where>
+        ORDER BY i.id DESC
         LIMIT #{size} OFFSET #{offset}
     </select>
 
-    <select id="findByCategorySubId" resultMap="itemResultMap">
-        SELECT id, category_sub_id, name, description, ks_standard, is_active, created_at, updated_at
-        FROM item
-        WHERE category_sub_id = #{categorySubId}
-        ORDER BY id
-    </select>
-
     <select id="countAll" resultType="int">
-        SELECT COUNT(*) FROM item
+        SELECT COUNT(*)
+        FROM item i
+        JOIN category_sub cs ON cs.id = i.category_sub_id
+        <where>
+            <if test="categorySubId != null">
+                AND i.category_sub_id = #{categorySubId}
+            </if>
+            <if test="categoryMainId != null">
+                AND cs.category_main_id = #{categoryMainId}
+            </if>
+        </where>
     </select>
 
     <update id="update" parameterType="com.jinbo.myerp.domain.Item">

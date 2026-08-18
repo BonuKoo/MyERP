@@ -14,11 +14,10 @@ public interface ItemMapper {
 
     Optional<Item> findById(@Param("id") Long id);
 
-    List<Item> findAll(@Param("offset") int offset, @Param("size") int size);
+    List<Item> findAll(@Param("offset") int offset, @Param("size") int size,
+                        @Param("categoryMainId") Long categoryMainId, @Param("categorySubId") Long categorySubId);
 
-    List<Item> findByCategorySubId(@Param("categorySubId") Long categorySubId);
-
-    int countAll();
+    int countAll(@Param("categoryMainId") Long categoryMainId, @Param("categorySubId") Long categorySubId);
 
     void update(Item item);
 }
