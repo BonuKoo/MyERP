@@ -1,0 +1,771 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --color-bg: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-border: #e3e6ec;
+  --color-text: #1f2430;
+  --color-text-muted: #6b7280;
+  --color-primary: #1e3a5f;
+  --color-primary-hover: #16304e;
+  --color-primary-soft: #e8edf5;
+  --color-danger: #c0392b;
+  --color-danger-soft: #fbe9e7;
+  --color-success: #16a34a;
+  --color-success-soft: #e7f6ec;
+  --color-neutral-soft: #eef0f3;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 50, 0.06);
+  --shadow-md: 0 4px 12px rgba(20, 30, 50, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  padding: 0.6rem 1.5rem;
+  min-height: 60px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-header .brand {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: var(--color-primary);
+}
+
+.app-header nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.25rem;
+}
+
+.app-header nav a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+.app-header nav a:hover {
+  color: var(--color-text);
+}
+
+.app-header nav a.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.app-header .user-info {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
+main {
+  flex: 1;
+  padding: 1.75rem;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 1rem;
+  color: var(--color-text);
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--color-text);
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.6rem;
+  color: var(--color-text);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+thead tr {
+  background: var(--color-primary-soft);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.88rem;
+}
+
+th {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tbody tr:hover {
+  background: var(--color-bg);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td button,
+td a {
+  margin-right: 0.5rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.pagination button {
+  border-radius: 999px;
+  padding: 0.4rem 1.1rem;
+}
+
+.pagination span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 420px;
+  background: var(--color-surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+form.form-wide {
+  max-width: 900px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+input,
+select {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-weight: 400;
+}
+
+input:focus,
+select:focus {
+  outline: 3px solid var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+button {
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.form-actions button[type='button'] {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.form-actions button[type='button']:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
+.button-danger {
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+}
+
+.auth-page {
+  max-width: 420px;
+  margin: 4rem auto;
+}
+
+.error-message {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
+/* 상태 배지 */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.badge-neutral {
+  background: var(--color-neutral-soft);
+  color: var(--color-text-muted);
+}
+
+.badge-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/*
+ * 품목 목록 대분류/중분류 필터 (ssangkom.co.kr 참고).
+ * 그 사이트는 라디오 checked 여부를 순수 CSS(:has())로만 표시하지만, 이 프로젝트는
+ * 이미 mainId/subId를 React state로 들고 있고 CategoryPage.tsx도 selected 여부를
+ * 조건부 className으로 표현하는 관례를 쓰고 있어 그 방식을 그대로 따른다
+ * (브라우저 :has() 지원 여부에 기대지 않아도 됨).
+ */
+.category-filter {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tab-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding-bottom: 0.7rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-label input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.tab-label:hover {
+  color: var(--color-primary);
+}
+
+.tab-label.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pill-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  background: var(--color-surface);
+}
+
+.pill-label input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pill-label:hover {
+  border-color: var(--color-primary);
+}
+
+.pill-label.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.breadcrumb-bar button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.breadcrumb-bar button:hover {
+  background: none;
+  color: var(--color-primary-hover);
+}
+
+/*
+ * 품목 카드 그리드. 실제 제품 이미지가 DB에 없어(ERP 도메인이라 이미지 필드 자체가
+ * 없음) ssangkom처럼 사진을 못 넣는다 — 대신 품목명 첫 글자를 넣은 단색 블록으로
+ * 이미지 자리를 대신한다.
+ */
+.item-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.item-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.item-card-head {
+  padding: 0.9rem 1rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item-card-head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+/* 사진이 있으면 <img>가, 없으면 첫 글자 플레이스홀더가 같은 자리를 채운다. */
+.item-card-thumb {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.item-card-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-card-thumb-placeholder {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.item-card-body {
+  padding: 0.6rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.item-card-category {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.item-card-meta {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.item-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+.item-card-footer a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.item-card-footer a:hover {
+  text-decoration: underline;
+}
+
+/* 품목 상세: 참고 사이트처럼 큰 사진 왼쪽 + 정보 오른쪽. 좁은 화면에선 세로로 쌓인다. */
+.item-detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.item-gallery {
+  flex: 0 0 340px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.item-gallery-main {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.item-gallery-main img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-gallery-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.item-gallery-thumbs button {
+  padding: 0;
+  width: 60px;
+  height: 60px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-gallery-thumbs button:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.item-gallery-thumbs button.selected {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary-soft);
+}
+
+.item-gallery-thumbs img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.item-gallery-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.item-detail-info {
+  flex: 1;
+  min-width: 260px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.item-detail-info p {
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* 수정 화면의 기존 사진 목록과, 업로드 전 로컬 미리보기 */
+.image-edit-list,
+.image-preview-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.image-edit-list li,
+.image-preview-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 110px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.image-edit-list img,
+.image-preview-list img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.image-preview-list li span {
+  overflow-wrap: anywhere;
+}
+
+.category-columns {
+  display: flex;
+  gap: 2rem;
+}
+
+.category-columns section {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.category-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.category-list button {
+  width: 100%;
+  text-align: left;
+  background: var(--color-neutral-soft);
+  color: var(--color-text);
+  border: 1px solid transparent;
+}
+
+.category-list button.selected {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.inline-form {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  max-width: none;
+  background: none;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.inline-form input {
+  flex: 1;
+}
+
+.inline-form-block {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  max-width: none;
+}
+
+.inline-form-block label {
+  min-width: 120px;
+}
+
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stock-adjust-input {
+  width: 70px;
+  margin-right: 0.4rem;
+}
+
+.history-panel {
+  margin-top: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem;
+}
