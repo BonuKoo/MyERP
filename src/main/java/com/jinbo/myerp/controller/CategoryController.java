@@ -79,4 +79,14 @@ public class CategoryController {
                 .toList();
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "중분류 전체 조회", description = "대분류 구분 없이 전체 중분류를 반환한다. " +
+            "품목 목록에서 필터 없이 전체를 보여줄 때 각 품목의 중분류명을 표시하기 위한 용도.")
+    @GetMapping("/sub")
+    public ResponseEntity<List<CategorySubResponse>> findAllSub() {
+        List<CategorySubResponse> response = categoryService.findAllSub().stream()
+                .map(CategorySubResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 }

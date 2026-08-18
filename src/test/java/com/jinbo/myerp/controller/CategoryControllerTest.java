@@ -99,4 +99,16 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Interior Tile Adhesive"));
     }
+
+    @Test
+    void findAllSub_returns200() throws Exception {
+        given(categoryService.findAllSub()).willReturn(List.of(
+                CategorySub.builder().id(1L).categoryMainId(1L).name("Interior Tile Adhesive").active(true).build(),
+                CategorySub.builder().id(2L).categoryMainId(2L).name("Wood Adhesive").active(true).build()));
+
+        mockMvc.perform(get("/api/categories/sub")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
 }

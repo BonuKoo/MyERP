@@ -52,6 +52,26 @@ class CategorySubMapperTest {
         assertThat(subs).extracting(CategorySub::getName).containsExactly("내장타일 접착제", "에폭시 접착제");
     }
 
+    /**
+     * 품목 목록의 대분류/중분류 필터(ItemMapper.findAll)는 이미 있지만, 필터 없이
+     * "전체" 품목을 보여줄 때 각 품목의 categorySubId를 이름으로 바꿔 보여주려면
+     * 대분류에 상관없이 전체 중분류를 한 번에 가져올 방법이 필요하다.
+     */
+    @Test
+    void findAll_returnsAllSubsAcrossDifferentMains() {
+        Long mainA = insertCategoryMain();
+        CategoryMain mainB = CategoryMain.builder().name("목공/지물용접착제").displayOrder(2).active(true).build();
+        categoryMainMapper.insert(mainB);
+        categorySubMapper.insert(CategorySub.builder().categoryMainId(mainA).name("내장타일 접착제").displayOrder(1).active(true).build());
+        categorySubMapper.insert(CategorySub.builder().categoryMainId(mainB.getId()).name("목공용 접착제").displayOrder(1).active(true).build());
+
+        List<CategorySub> subs = categorySubMapper.findAll();
+
+        assertThat(subs).hasSize(2);
+        assertThat(subs).extracting(CategorySub::getName)
+                .containsExactlyInAnyOrder("내장타일 접착제", "목공용 접착제");
+    }
+
     @Test
     void update_changesName() {
         Long mainId = insertCategoryMain();

@@ -80,4 +80,16 @@ class CategoryServiceTest {
 
         assertThat(result).isEqualTo(subs);
     }
+
+    @Test
+    void findAllSub_delegatesToMapper() {
+        List<CategorySub> subs = List.of(
+                CategorySub.builder().id(1L).categoryMainId(1L).name("a").build(),
+                CategorySub.builder().id(2L).categoryMainId(2L).name("b").build());
+        given(categorySubMapper.findAll()).willReturn(subs);
+
+        List<CategorySub> result = categoryService.findAllSub();
+
+        assertThat(result).isEqualTo(subs);
+    }
 }

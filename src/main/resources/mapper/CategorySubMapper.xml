@@ -30,6 +30,14 @@
         ORDER BY display_order
     </select>
 
+    <!-- 품목 목록에서 필터 없이 "전체"를 보여줄 때 각 품목의 categorySubId를 이름으로
+         바꿔 보여주기 위한 조회. 대분류 구분 없이 전부 가져온다. -->
+    <select id="findAll" resultMap="categorySubResultMap">
+        SELECT id, category_main_id, name, display_order, is_active
+        FROM category_sub
+        ORDER BY category_main_id, display_order
+    </select>
+
     <update id="update" parameterType="com.jinbo.myerp.domain.CategorySub">
         UPDATE category_sub
         SET name = #{name},
