@@ -215,3 +215,28 @@ CREATE TABLE IF NOT EXISTS employee (
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS attendance (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id     BIGINT NOT NULL,
+    work_date       DATE NOT NULL,
+    clock_in        DATETIME,
+    clock_out       DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (employee_id, work_date)
+);
+
+CREATE TABLE IF NOT EXISTS leave_request (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id     BIGINT NOT NULL,
+    leave_type      VARCHAR(20) NOT NULL,
+    start_date      DATE NOT NULL,
+    end_date        DATE NOT NULL,
+    leave_days      DECIMAL(4,1) NOT NULL,
+    reason          VARCHAR(255),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    approved_by     BIGINT,
+    approved_at     DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

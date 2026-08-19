@@ -83,6 +83,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/departments/*", "/api/positions/*", "/api/employees/*").hasRole("OWNER")
                         .requestMatchers(HttpMethod.DELETE, "/api/departments/*", "/api/positions/*").hasRole("OWNER")
                         .requestMatchers(HttpMethod.PATCH, "/api/employees/*/resign").hasRole("OWNER")
+                        // 휴가 승인/반려: 신청·본인조회는 인증만 있으면 되고(Service에서 본인 확인),
+                        // 승인 결정만 OWNER 전용
+                        .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/approve", "/api/leave-requests/*/reject").hasRole("OWNER")
 
                         .anyRequest().authenticated()
                 )

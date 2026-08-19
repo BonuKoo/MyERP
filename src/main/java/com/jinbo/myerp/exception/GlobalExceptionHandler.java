@@ -63,6 +63,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
     }
 
+    @ExceptionHandler(InvalidLeaveRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidLeaveRequest(InvalidLeaveRequestException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+
     @ExceptionHandler({
             PartnerNotFoundException.class,
             CompanyUserNotFoundException.class,
@@ -77,7 +82,8 @@ public class GlobalExceptionHandler {
             PaymentNotFoundException.class,
             DepartmentNotFoundException.class,
             PositionNotFoundException.class,
-            EmployeeNotFoundException.class
+            EmployeeNotFoundException.class,
+            LeaveRequestNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
