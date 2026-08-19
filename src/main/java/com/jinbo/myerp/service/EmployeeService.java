@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +49,10 @@ public class EmployeeService {
     public Employee findByCompanyUserId(Long companyUserId) {
         return employeeMapper.findByCompanyUserId(companyUserId)
                 .orElseThrow(() -> new EmployeeNotFoundException("연결된 사원 정보가 없습니다: companyUserId=" + companyUserId));
+    }
+
+    public List<Employee> findAllActive() {
+        return employeeMapper.findAllActive();
     }
 
     public PageResult<Employee> findAll(int page, int size, Long departmentId, Long positionId, String name) {

@@ -122,4 +122,17 @@ class EmployeeMapperTest {
     void findByCompanyUserId_whenNotLinked_returnsEmpty() {
         assertThat(employeeMapper.findByCompanyUserId(999L)).isEmpty();
     }
+
+    @Test
+    void findAllActive_excludesResigned() {
+        Employee active = newEmployee("김철수");
+        employeeMapper.insert(active);
+        Employee resigned = newEmployee("이영희");
+        resigned.setActive(false);
+        employeeMapper.insert(resigned);
+
+        List<Employee> result = employeeMapper.findAllActive();
+
+        assertThat(result).extracting(Employee::getName).containsExactly("김철수");
+    }
 }
