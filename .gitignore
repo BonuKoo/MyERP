@@ -39,3 +39,9 @@ out/
 ### k6 ###
 k6/reports/*
 !k6/reports/.gitkeep
+
+### scripts (외부 사이트 크롤링 결과물 - 재실행하면 다시 생성됨, 저작권 있는
+### 원본 텍스트/이미지를 리포에 영구 보관하지 않기 위해 결과물만 제외) ###
+scripts/catalog.json
+scripts/images/
+scripts/seed_result.json

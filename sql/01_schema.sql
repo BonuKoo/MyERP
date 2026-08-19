@@ -247,3 +247,102 @@ CREATE TABLE payment (
     FOREIGN KEY (partner_id) REFERENCES partner(id),
     FOREIGN KEY (created_by) REFERENCES company_user(id)
 );
+
+-- ============================================================
+-- 6단계: 인사관리(HR) — 부서/직책/사원/근태/휴가/급여
+-- ============================================================
+CREATE TABLE department (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 테이블명 job_position: "position"은 SQL 표준 POSITION(substr IN str) 함수와
+-- 충돌하는 예약어라 그대로 쓸 수 없다(leave_request와 같은 이유로 회피). Java
+-- 도메인 클래스명은 Position 그대로 유지.
+CREATE TABLE job_position (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    allowance   DECIMAL(12,2) NOT NULL DEFAULT 0,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE employee (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    department_id       BIGINT NOT NULL,
+    position_id         BIGINT NOT NULL,
+    company_user_id     BIGINT UNIQUE,
+    name                VARCHAR(50) NOT NULL,
+    phone               VARCHAR(20),
+    email               VARCHAR(100),
+    hire_date           DATE NOT NULL,
+    resignation_date    DATE,
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES department(id),
+    FOREIGN KEY (position_id) REFERENCES job_position(id),
+    FOREIGN KEY (company_user_id) REFERENCES company_user(id)
+);
+
+CREATE TABLE attendance (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id     BIGINT NOT NULL,
+    work_date       DATE NOT NULL,
+    clock_in        DATETIME,
+    clock_out       DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    UNIQUE (employee_id, work_date)
+);
+
+-- 테이블명 leave_request: "leave"는 MySQL 예약어(반복문 LEAVE 문)라 회피.
+-- 참고자료(greetin_sm)엔 승인 워크플로가 없어 status/approved_by/approved_at은
+-- 신규 설계(AskUserQuestion에서 확정한 "휴가 승인=OWNER" 전제).
+CREATE TABLE leave_request (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id     BIGINT NOT NULL,
+    leave_type      VARCHAR(20) NOT NULL,
+    start_date      DATE NOT NULL,
+    end_date        DATE NOT NULL,
+    leave_days      DECIMAL(4,1) NOT NULL,
+    reason          VARCHAR(255),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    approved_by     BIGINT,
+    approved_at     DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    FOREIGN KEY (approved_by) REFERENCES company_user(id)
+);
+
+-- 단일 행 설정 테이블. 애플리케이션이 최초 조회 시점에 기본값(10만원)으로
+-- 지연 생성하므로 여기서는 시드 데이터를 넣지 않는다(01_schema.sql은 이
+-- 프로젝트 관례상 스키마 전용, 데이터 시딩은 하지 않음).
+CREATE TABLE salary_setting (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    daily_wage  DECIMAL(12,2) NOT NULL,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE salary (
+    id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id             BIGINT NOT NULL,
+    pay_year_month          VARCHAR(7) NOT NULL,
+    work_days               INT NOT NULL,
+    base_pay                DECIMAL(12,2) NOT NULL,
+    position_allowance      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    overtime_pay            DECIMAL(12,2) NOT NULL DEFAULT 0,
+    gross_pay               DECIMAL(12,2) NOT NULL,
+    income_tax              DECIMAL(12,2) NOT NULL,
+    resident_tax            DECIMAL(12,2) NOT NULL,
+    national_pension        DECIMAL(12,2) NOT NULL,
+    health_insurance        DECIMAL(12,2) NOT NULL,
+    employment_insurance    DECIMAL(12,2) NOT NULL,
+    total_deduction         DECIMAL(12,2) NOT NULL,
+    net_pay                 DECIMAL(12,2) NOT NULL,
+    calculated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    UNIQUE (employee_id, pay_year_month)
+);

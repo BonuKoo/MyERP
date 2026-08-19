@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.SalaryMapper">
+
+    <resultMap id="salaryResultMap" type="com.jinbo.myerp.domain.Salary">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="payYearMonth" column="pay_year_month"/>
+        <result property="workDays" column="work_days"/>
+        <result property="basePay" column="base_pay"/>
+        <result property="positionAllowance" column="position_allowance"/>
+        <result property="overtimePay" column="overtime_pay"/>
+        <result property="grossPay" column="gross_pay"/>
+        <result property="incomeTax" column="income_tax"/>
+        <result property="residentTax" column="resident_tax"/>
+        <result property="nationalPension" column="national_pension"/>
+        <result property="healthInsurance" column="health_insurance"/>
+        <result property="employmentInsurance" column="employment_insurance"/>
+        <result property="totalDeduction" column="total_deduction"/>
+        <result property="netPay" column="net_pay"/>
+        <result property="calculatedAt" column="calculated_at"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, employee_id, pay_year_month, work_days, base_pay, position_allowance, overtime_pay,
+        gross_pay, income_tax, resident_tax, national_pension, health_insurance, employment_insurance,
+        total_deduction, net_pay, calculated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Salary" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO salary (employee_id, pay_year_month, work_days, base_pay, position_allowance, overtime_pay,
+                             gross_pay, income_tax, resident_tax, national_pension, health_insurance,
+                             employment_insurance, total_deduction, net_pay, calculated_at)
+        VALUES (#{employeeId}, #{payYearMonth}, #{workDays}, #{basePay}, #{positionAllowance}, #{overtimePay},
+                #{grossPay}, #{incomeTax}, #{residentTax}, #{nationalPension}, #{healthInsurance},
+                #{employmentInsurance}, #{totalDeduction}, #{netPay}, #{calculatedAt})
+    </insert>
+
+    <select id="findByEmployeeIdAndPayYearMonth" resultMap="salaryResultMap">
+        SELECT <include refid="columns"/>
+        FROM salary
+        WHERE employee_id = #{employeeId} AND pay_year_month = #{payYearMonth}
+    </select>
+
+    <select id="findByPayYearMonth" resultMap="salaryResultMap">
+        SELECT <include refid="columns"/>
+        FROM salary
+        WHERE pay_year_month = #{payYearMonth}
+        ORDER BY employee_id
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByPayYearMonth" resultType="int">
+        SELECT COUNT(*) FROM salary WHERE pay_year_month = #{payYearMonth}
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Salary">
+        UPDATE salary
+        SET work_days = #{workDays},
+            base_pay = #{basePay},
+            position_allowance = #{positionAllowance},
+            overtime_pay = #{overtimePay},
+            gross_pay = #{grossPay},
+            income_tax = #{incomeTax},
+            resident_tax = #{residentTax},
+            national_pension = #{nationalPension},
+            health_insurance = #{healthInsurance},
+            employment_insurance = #{employmentInsurance},
+            total_deduction = #{totalDeduction},
+            net_pay = #{netPay},
+            calculated_at = #{calculatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

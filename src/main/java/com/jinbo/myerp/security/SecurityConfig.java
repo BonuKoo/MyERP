@@ -78,6 +78,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/company-info", "/api/categories/**", "/api/certifications").hasRole("OWNER")
                         // 거래처 비활성화
                         .requestMatchers(HttpMethod.DELETE, "/api/partners/*").hasRole("OWNER")
+                        // 인사관리 마스터: 부서/직책/사원 등록/수정/비활성화·퇴사(조회는 STAFF도 가능)
+                        .requestMatchers(HttpMethod.POST, "/api/departments", "/api/positions", "/api/employees").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PUT, "/api/departments/*", "/api/positions/*", "/api/employees/*").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/departments/*", "/api/positions/*").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/employees/*/resign").hasRole("OWNER")
+                        // 휴가 승인/반려: 신청·본인조회는 인증만 있으면 되고(Service에서 본인 확인),
+                        // 승인 결정만 OWNER 전용
+                        .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/approve", "/api/leave-requests/*/reject").hasRole("OWNER")
+                        // 급여: 일당 변경, 계산 실행, 조회 전부 OWNER 전용(설정 조회만 인증만 있으면 됨)
+                        .requestMatchers(HttpMethod.PUT, "/api/salary-settings").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/salaries/calculate").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/salaries").hasRole("OWNER")
 
                         .anyRequest().authenticated()
                 )
