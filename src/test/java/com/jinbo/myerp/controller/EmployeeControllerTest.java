@@ -119,6 +119,26 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void findMe_withLinkedEmployee_returns200() throws Exception {
+        given(employeeService.findByCompanyUserId(2L)).willReturn(sampleEmployee());
+
+        mockMvc.perform(get("/api/employees/me")
+                        .header(HttpHeaders.AUTHORIZATION, staffToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("김철수"));
+    }
+
+    @Test
+    void findMe_whenNotLinked_returns404() throws Exception {
+        given(employeeService.findByCompanyUserId(2L))
+                .willThrow(new EmployeeNotFoundException("연결된 사원 정보가 없습니다: companyUserId=2"));
+
+        mockMvc.perform(get("/api/employees/me")
+                        .header(HttpHeaders.AUTHORIZATION, staffToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void findById_notFound_returns404() throws Exception {
         given(employeeService.findById(99L)).willThrow(new EmployeeNotFoundException(99L));
 
