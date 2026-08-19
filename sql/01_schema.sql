@@ -285,3 +285,34 @@ CREATE TABLE employee (
     FOREIGN KEY (position_id) REFERENCES job_position(id),
     FOREIGN KEY (company_user_id) REFERENCES company_user(id)
 );
+
+CREATE TABLE attendance (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id     BIGINT NOT NULL,
+    work_date       DATE NOT NULL,
+    clock_in        DATETIME,
+    clock_out       DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    UNIQUE (employee_id, work_date)
+);
+
+-- 테이블명 leave_request: "leave"는 MySQL 예약어(반복문 LEAVE 문)라 회피.
+-- 참고자료(greetin_sm)엔 승인 워크플로가 없어 status/approved_by/approved_at은
+-- 신규 설계(AskUserQuestion에서 확정한 "휴가 승인=OWNER" 전제).
+CREATE TABLE leave_request (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id     BIGINT NOT NULL,
+    leave_type      VARCHAR(20) NOT NULL,
+    start_date      DATE NOT NULL,
+    end_date        DATE NOT NULL,
+    leave_days      DECIMAL(4,1) NOT NULL,
+    reason          VARCHAR(255),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    approved_by     BIGINT,
+    approved_at     DATETIME,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    FOREIGN KEY (approved_by) REFERENCES company_user(id)
+);

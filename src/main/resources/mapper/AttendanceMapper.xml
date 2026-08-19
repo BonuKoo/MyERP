@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.AttendanceMapper">
+
+    <resultMap id="attendanceResultMap" type="com.jinbo.myerp.domain.Attendance">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="workDate" column="work_date"/>
+        <result property="clockIn" column="clock_in"/>
+        <result property="clockOut" column="clock_out"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="columns">id, employee_id, work_date, clock_in, clock_out, created_at, updated_at</sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Attendance" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attendance (employee_id, work_date, clock_in, clock_out, created_at, updated_at)
+        VALUES (#{employeeId}, #{workDate}, #{clockIn}, #{clockOut}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="attendanceResultMap">
+        SELECT <include refid="columns"/>
+        FROM attendance
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByEmployeeIdAndWorkDate" resultMap="attendanceResultMap">
+        SELECT <include refid="columns"/>
+        FROM attendance
+        WHERE employee_id = #{employeeId} AND work_date = #{workDate}
+    </select>
+
+    <select id="findByEmployeeIdAndMonth" resultMap="attendanceResultMap">
+        SELECT <include refid="columns"/>
+        FROM attendance
+        WHERE employee_id = #{employeeId}
+          AND work_date &gt;= #{monthStart} AND work_date &lt; #{monthEndExclusive}
+        ORDER BY work_date
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Attendance">
+        UPDATE attendance
+        SET clock_in = #{clockIn},
+            clock_out = #{clockOut},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
