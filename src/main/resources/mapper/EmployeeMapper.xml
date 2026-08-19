@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.EmployeeMapper">
+
+    <!-- is_active는 boolean 컬럼이라 map-underscore-to-camel-case만으로는 매핑되지
+         않는다(계층 설계 원칙 1) -->
+    <resultMap id="employeeResultMap" type="com.jinbo.myerp.domain.Employee">
+        <id property="id" column="id"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="positionId" column="position_id"/>
+        <result property="companyUserId" column="company_user_id"/>
+        <result property="name" column="name"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="hireDate" column="hire_date"/>
+        <result property="resignationDate" column="resignation_date"/>
+        <result property="active" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="columns">
+        id, department_id, position_id, company_user_id, name, phone, email,
+        hire_date, resignation_date, is_active, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Employee" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO employee (department_id, position_id, company_user_id, name, phone, email,
+                               hire_date, resignation_date, is_active, created_at, updated_at)
+        VALUES (#{departmentId}, #{positionId}, #{companyUserId}, #{name}, #{phone}, #{email},
+                #{hireDate}, #{resignationDate}, #{active}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="employeeResultMap">
+        SELECT <include refid="columns"/>
+        FROM employee
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCompanyUserId" resultMap="employeeResultMap">
+        SELECT <include refid="columns"/>
+        FROM employee
+        WHERE company_user_id = #{companyUserId}
+    </select>
+
+    <select id="findAll" resultMap="employeeResultMap">
+        SELECT <include refid="columns"/>
+        FROM employee
+        <where>
+            <if test="departmentId != null">AND department_id = #{departmentId}</if>
+            <if test="positionId != null">AND position_id = #{positionId}</if>
+            <if test="name != null and name != ''">AND name LIKE CONCAT('%', #{name}, '%')</if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM employee
+        <where>
+            <if test="departmentId != null">AND department_id = #{departmentId}</if>
+            <if test="positionId != null">AND position_id = #{positionId}</if>
+            <if test="name != null and name != ''">AND name LIKE CONCAT('%', #{name}, '%')</if>
+        </where>
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Employee">
+        UPDATE employee
+        SET department_id = #{departmentId},
+            position_id = #{positionId},
+            company_user_id = #{companyUserId},
+            name = #{name},
+            phone = #{phone},
+            email = #{email},
+            hire_date = #{hireDate},
+            resignation_date = #{resignationDate},
+            is_active = #{active},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

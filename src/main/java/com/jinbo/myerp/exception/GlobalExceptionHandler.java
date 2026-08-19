@@ -33,6 +33,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
     }
 
+    @ExceptionHandler(PositionAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handlePositionAlreadyExists(PositionAlreadyExistsException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
+    }
+
+    @ExceptionHandler(EmployeeAlreadyLinkedException.class)
+    public ResponseEntity<ErrorResponse> handleEmployeeAlreadyLinked(EmployeeAlreadyLinkedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(HttpStatus.CONFLICT, e.getMessage()));
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.of(HttpStatus.UNAUTHORIZED, e.getMessage()));
@@ -65,7 +75,9 @@ public class GlobalExceptionHandler {
             PurchaseNotFoundException.class,
             SaleNotFoundException.class,
             PaymentNotFoundException.class,
-            DepartmentNotFoundException.class
+            DepartmentNotFoundException.class,
+            PositionNotFoundException.class,
+            EmployeeNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
