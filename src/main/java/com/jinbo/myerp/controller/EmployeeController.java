@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +54,17 @@ public class EmployeeController {
         Employee saved = employeeService.register(request.toDomain());
         return ResponseEntity.created(URI.create("/api/employees/" + saved.getId()))
                 .body(EmployeeResponse.from(saved));
+    }
+
+    @Operation(summary = "내 사원 정보 조회", description = "로그인 계정에 연결된 사원 정보를 반환한다. 연결된 사원이 없으면 404.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "연결된 사원 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/me")
+    public ResponseEntity<EmployeeResponse> findMe(@AuthenticationPrincipal Long currentUserId) {
+        return ResponseEntity.ok(EmployeeResponse.from(employeeService.findByCompanyUserId(currentUserId)));
     }
 
     @Operation(summary = "사원 단건 조회")
