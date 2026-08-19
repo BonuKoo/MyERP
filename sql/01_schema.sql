@@ -257,3 +257,31 @@ CREATE TABLE department (
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 테이블명 job_position: "position"은 SQL 표준 POSITION(substr IN str) 함수와
+-- 충돌하는 예약어라 그대로 쓸 수 없다(leave_request와 같은 이유로 회피). Java
+-- 도메인 클래스명은 Position 그대로 유지.
+CREATE TABLE job_position (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    allowance   DECIMAL(12,2) NOT NULL DEFAULT 0,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE employee (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    department_id       BIGINT NOT NULL,
+    position_id         BIGINT NOT NULL,
+    company_user_id     BIGINT UNIQUE,
+    name                VARCHAR(50) NOT NULL,
+    phone               VARCHAR(20),
+    email               VARCHAR(100),
+    hire_date           DATE NOT NULL,
+    resignation_date    DATE,
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES department(id),
+    FOREIGN KEY (position_id) REFERENCES job_position(id),
+    FOREIGN KEY (company_user_id) REFERENCES company_user(id)
+);

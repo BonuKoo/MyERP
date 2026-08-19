@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jinbo.myerp.mapper.PositionMapper">
+
+    <!-- 테이블명은 job_position(POSITION 예약어 회피). is_active는 boolean 컬럼이라
+         map-underscore-to-camel-case만으로는 매핑되지 않는다(계층 설계 원칙 1) -->
+    <resultMap id="positionResultMap" type="com.jinbo.myerp.domain.Position">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="allowance" column="allowance"/>
+        <result property="active" column="is_active"/>
+    </resultMap>
+
+    <sql id="columns">id, name, allowance, is_active</sql>
+
+    <insert id="insert" parameterType="com.jinbo.myerp.domain.Position" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO job_position (name, allowance, is_active)
+        VALUES (#{name}, #{allowance}, #{active})
+    </insert>
+
+    <select id="findById" resultMap="positionResultMap">
+        SELECT <include refid="columns"/>
+        FROM job_position
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByName" resultMap="positionResultMap">
+        SELECT <include refid="columns"/>
+        FROM job_position
+        WHERE name = #{name}
+    </select>
+
+    <select id="findAll" resultMap="positionResultMap">
+        SELECT <include refid="columns"/>
+        FROM job_position
+        ORDER BY id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM job_position
+    </select>
+
+    <update id="update" parameterType="com.jinbo.myerp.domain.Position">
+        UPDATE job_position
+        SET name = #{name},
+            allowance = #{allowance},
+            is_active = #{active}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -193,3 +193,25 @@ CREATE TABLE IF NOT EXISTS department (
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS job_position (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    allowance   DECIMAL(12,2) NOT NULL DEFAULT 0,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS employee (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    department_id       BIGINT NOT NULL,
+    position_id         BIGINT NOT NULL,
+    company_user_id     BIGINT UNIQUE,
+    name                VARCHAR(50) NOT NULL,
+    phone               VARCHAR(20),
+    email               VARCHAR(100),
+    hire_date           DATE NOT NULL,
+    resignation_date    DATE,
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
