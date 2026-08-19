@@ -240,3 +240,29 @@ CREATE TABLE IF NOT EXISTS leave_request (
     approved_at     DATETIME,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS salary_setting (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    daily_wage  DECIMAL(12,2) NOT NULL,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS salary (
+    id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id             BIGINT NOT NULL,
+    pay_year_month          VARCHAR(7) NOT NULL,
+    work_days               INT NOT NULL,
+    base_pay                DECIMAL(12,2) NOT NULL,
+    position_allowance      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    overtime_pay            DECIMAL(12,2) NOT NULL DEFAULT 0,
+    gross_pay               DECIMAL(12,2) NOT NULL,
+    income_tax              DECIMAL(12,2) NOT NULL,
+    resident_tax            DECIMAL(12,2) NOT NULL,
+    national_pension        DECIMAL(12,2) NOT NULL,
+    health_insurance        DECIMAL(12,2) NOT NULL,
+    employment_insurance    DECIMAL(12,2) NOT NULL,
+    total_deduction         DECIMAL(12,2) NOT NULL,
+    net_pay                 DECIMAL(12,2) NOT NULL,
+    calculated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (employee_id, pay_year_month)
+);

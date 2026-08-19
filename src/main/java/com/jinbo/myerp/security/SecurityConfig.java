@@ -86,6 +86,10 @@ public class SecurityConfig {
                         // 휴가 승인/반려: 신청·본인조회는 인증만 있으면 되고(Service에서 본인 확인),
                         // 승인 결정만 OWNER 전용
                         .requestMatchers(HttpMethod.PATCH, "/api/leave-requests/*/approve", "/api/leave-requests/*/reject").hasRole("OWNER")
+                        // 급여: 일당 변경, 계산 실행, 조회 전부 OWNER 전용(설정 조회만 인증만 있으면 됨)
+                        .requestMatchers(HttpMethod.PUT, "/api/salary-settings").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/salaries/calculate").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/salaries").hasRole("OWNER")
 
                         .anyRequest().authenticated()
                 )

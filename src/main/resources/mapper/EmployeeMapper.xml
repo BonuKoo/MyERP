@@ -67,6 +67,13 @@
         </where>
     </select>
 
+    <select id="findAllActive" resultMap="employeeResultMap">
+        SELECT <include refid="columns"/>
+        FROM employee
+        WHERE is_active = TRUE
+        ORDER BY id
+    </select>
+
     <update id="update" parameterType="com.jinbo.myerp.domain.Employee">
         UPDATE employee
         SET department_id = #{departmentId},

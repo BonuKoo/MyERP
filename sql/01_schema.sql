@@ -316,3 +316,33 @@ CREATE TABLE leave_request (
     FOREIGN KEY (employee_id) REFERENCES employee(id),
     FOREIGN KEY (approved_by) REFERENCES company_user(id)
 );
+
+-- 단일 행 설정 테이블. 애플리케이션이 최초 조회 시점에 기본값(10만원)으로
+-- 지연 생성하므로 여기서는 시드 데이터를 넣지 않는다(01_schema.sql은 이
+-- 프로젝트 관례상 스키마 전용, 데이터 시딩은 하지 않음).
+CREATE TABLE salary_setting (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    daily_wage  DECIMAL(12,2) NOT NULL,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE salary (
+    id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_id             BIGINT NOT NULL,
+    pay_year_month          VARCHAR(7) NOT NULL,
+    work_days               INT NOT NULL,
+    base_pay                DECIMAL(12,2) NOT NULL,
+    position_allowance      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    overtime_pay            DECIMAL(12,2) NOT NULL DEFAULT 0,
+    gross_pay               DECIMAL(12,2) NOT NULL,
+    income_tax              DECIMAL(12,2) NOT NULL,
+    resident_tax            DECIMAL(12,2) NOT NULL,
+    national_pension        DECIMAL(12,2) NOT NULL,
+    health_insurance        DECIMAL(12,2) NOT NULL,
+    employment_insurance    DECIMAL(12,2) NOT NULL,
+    total_deduction         DECIMAL(12,2) NOT NULL,
+    net_pay                 DECIMAL(12,2) NOT NULL,
+    calculated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employee(id),
+    UNIQUE (employee_id, pay_year_month)
+);

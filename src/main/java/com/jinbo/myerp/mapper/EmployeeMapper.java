@@ -23,5 +23,7 @@ public interface EmployeeMapper {
     int countAll(@Param("departmentId") Long departmentId, @Param("positionId") Long positionId,
                  @Param("name") String name);
 
+    List<Employee> findAllActive();
+
     void update(Employee employee);
 }

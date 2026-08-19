@@ -120,6 +120,14 @@ class EmployeeServiceTest {
     }
 
     @Test
+    void findAllActive_delegatesToMapper() {
+        List<Employee> employees = List.of(newEmployee());
+        given(employeeMapper.findAllActive()).willReturn(employees);
+
+        assertThat(employeeService.findAllActive()).isEqualTo(employees);
+    }
+
+    @Test
     void findById_notFound_throws() {
         given(employeeMapper.findById(1L)).willReturn(Optional.empty());
 
