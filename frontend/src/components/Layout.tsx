@@ -25,6 +25,11 @@ export default function Layout() {
             <NavLink to="/sales">매출</NavLink>
             <NavLink to="/payments">결제</NavLink>
             <NavLink to="/company-info">회사정보</NavLink>
+            <NavLink to="/organization">조직</NavLink>
+            <NavLink to="/employees">사원</NavLink>
+            <NavLink to="/my-attendance">내근태</NavLink>
+            {/* 급여 목록 조회 자체가 OWNER 전용(백엔드도 403으로 막는다) */}
+            {isOwner && <NavLink to="/salary">급여</NavLink>}
             {/* 계정 생성은 OWNER만 가능하므로 진입점도 OWNER에게만 보인다 */}
             {isOwner && <NavLink to="/signup">사용자 등록</NavLink>}
             <span className="user-info">

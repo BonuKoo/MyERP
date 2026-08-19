@@ -21,6 +21,12 @@ import PurchaseDetailPage from './pages/PurchaseDetailPage';
 import SaleListPage from './pages/SaleListPage';
 import SaleFormPage from './pages/SaleFormPage';
 import SaleDetailPage from './pages/SaleDetailPage';
+import OrganizationPage from './pages/OrganizationPage';
+import EmployeeListPage from './pages/EmployeeListPage';
+import EmployeeFormPage from './pages/EmployeeFormPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
+import MyAttendancePage from './pages/MyAttendancePage';
+import SalaryPage from './pages/SalaryPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +68,13 @@ export default function App() {
                 <Route path="/sales" element={<SaleListPage />} />
                 <Route path="/sales/new" element={<SaleFormPage />} />
                 <Route path="/sales/:id" element={<SaleDetailPage />} />
+                <Route path="/organization" element={<OrganizationPage />} />
+                <Route path="/employees" element={<EmployeeListPage />} />
+                <Route path="/employees/new" element={<EmployeeFormPage />} />
+                <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+                <Route path="/employees/:id/edit" element={<EmployeeFormPage />} />
+                <Route path="/my-attendance" element={<MyAttendancePage />} />
+                <Route path="/salary" element={<SalaryPage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/partners" replace />} />

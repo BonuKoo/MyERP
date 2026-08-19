@@ -310,6 +310,121 @@ export interface LedgerEntryResponse {
   createdAt: string;
 }
 
+export type LeaveType = 'FULL_DAY' | 'HALF_DAY';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface DepartmentRequest {
+  name: string;
+}
+
+export interface DepartmentResponse {
+  id: number;
+  name: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface PositionRequest {
+  name: string;
+  allowance: number;
+}
+
+export interface PositionResponse {
+  id: number;
+  name: string;
+  allowance: number;
+  active: boolean;
+}
+
+export interface EmployeeRequest {
+  departmentId: number;
+  positionId: number;
+  companyUserId?: number;
+  name: string;
+  phone?: string;
+  email?: string;
+  hireDate: string;
+}
+
+export interface EmployeeResignRequest {
+  resignationDate: string;
+}
+
+export interface EmployeeResponse {
+  id: number;
+  departmentId: number;
+  positionId: number;
+  companyUserId: number | null;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  hireDate: string;
+  resignationDate: string | null;
+  active: boolean;
+}
+
+export interface AttendanceResponse {
+  id: number;
+  employeeId: number;
+  workDate: string;
+  clockIn: string | null;
+  clockOut: string | null;
+}
+
+export interface AttendanceSummaryResponse {
+  employeeId: number;
+  yearMonth: string;
+  workDays: number;
+  totalLateMinutes: number;
+  totalEarlyLeaveMinutes: number;
+  totalOvertimeMinutes: number;
+}
+
+export interface LeaveRequestApplyRequest {
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+}
+
+export interface LeaveRequestResponse {
+  id: number;
+  employeeId: number;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  leaveDays: number;
+  reason: string | null;
+  status: LeaveStatus;
+}
+
+export interface SalarySettingRequest {
+  dailyWage: number;
+}
+
+export interface SalarySettingResponse {
+  id: number;
+  dailyWage: number;
+}
+
+export interface SalaryResponse {
+  id: number;
+  employeeId: number;
+  payYearMonth: string;
+  workDays: number;
+  basePay: number;
+  positionAllowance: number;
+  overtimePay: number;
+  grossPay: number;
+  incomeTax: number;
+  residentTax: number;
+  nationalPension: number;
+  healthInsurance: number;
+  employmentInsurance: number;
+  totalDeduction: number;
+  netPay: number;
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalCount: number;
